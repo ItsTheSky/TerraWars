@@ -1,8 +1,8 @@
-﻿package net.itsthesky.terrawars;
+package net.itsthesky.terrawars;
 
 import com.google.common.collect.Sets;
-import net.itsthesky.terrawars.api.services.IServiceProvider;
-import net.itsthesky.terrawars.api.services.Service;
+import net.itsthesky.terrawars.api.services.base.IServiceProvider;
+import net.itsthesky.terrawars.api.services.base.Service;
 import net.itsthesky.terrawars.util.Checks;
 import net.itsthesky.terrawars.util.Classes;
 import org.jetbrains.annotations.NotNull;

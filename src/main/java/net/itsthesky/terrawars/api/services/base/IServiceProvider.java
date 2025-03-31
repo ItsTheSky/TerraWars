@@ -1,4 +1,4 @@
-﻿package net.itsthesky.terrawars.api.services;
+package net.itsthesky.terrawars.api.services.base;
 
 import org.jetbrains.annotations.NotNull;
 

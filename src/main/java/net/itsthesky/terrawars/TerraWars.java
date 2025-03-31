@@ -1,6 +1,6 @@
 package net.itsthesky.terrawars;
 
-import net.itsthesky.terrawars.api.services.IServiceProvider;
+import net.itsthesky.terrawars.api.services.base.IServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class TerraWars extends JavaPlugin {

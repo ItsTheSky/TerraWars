@@ -1,6 +1,6 @@
-﻿package net.itsthesky.terrawars.core.services;
+package net.itsthesky.terrawars.core.services;
 
-import net.itsthesky.terrawars.api.services.Service;
+import net.itsthesky.terrawars.api.services.base.Service;
 import net.itsthesky.terrawars.api.services.IChatService;
 import net.itsthesky.terrawars.util.Checks;
 import net.kyori.adventure.audience.Audience;

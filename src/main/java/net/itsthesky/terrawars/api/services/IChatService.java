@@ -1,4 +1,4 @@
-﻿package net.itsthesky.terrawars.api.services;
+package net.itsthesky.terrawars.api.services;
 
 import lombok.Getter;
 import net.kyori.adventure.audience.Audience;

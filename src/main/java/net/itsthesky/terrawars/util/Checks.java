@@ -1,4 +1,4 @@
-﻿package net.itsthesky.terrawars.util;
+package net.itsthesky.terrawars.util;
 
 public class Checks {
 
