@@ -13,12 +13,14 @@ public final class TerraWars extends JavaPlugin {
 
         serviceProvider = new ServiceProvider(this);
         try {
-            serviceProvider.injectServices("net.itsthesky.terrawars.core");
+            serviceProvider.injectServices("net.itsthesky.terrawars.core.services");
         } catch (Exception e) {
             getLogger().severe("Failed to inject services: " + e.getMessage());
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+
+        getLogger().info("TerraWars is ready to go! Registered " + serviceProvider.getRegisteredServices().size() + " services.");
     }
 
     @Override

@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'io.papermc.paperweight.userdev' version '2.0.0-beta.14'
     id 'io.freefair.lombok' version '8.13.1'
+    id 'com.gradleup.shadow' version '8.3.3'
 }
 
 group = 'net.itsthesky'
@@ -17,6 +18,10 @@ repositories {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
+    maven {
+        name = "CodeMC"
+        url = "https://repo.codemc.org/repository/maven-public/"
+    }
 }
 
 dependencies {
@@ -24,6 +29,9 @@ dependencies {
 
     // MiniMessage
     implementation 'net.kyori:adventure-text-minimessage:4.19.0'
+
+    // CommandAPI
+    implementation 'dev.jorel:commandapi-bukkit-shade-mojang-mapped:9.7.0'
 }
 
 java {
@@ -32,6 +40,12 @@ java {
 
 tasks.assemble {
     dependsOn(tasks.reobfJar)
+}
+
+shadowJar {
+    archiveFileName.set("${project.name} v${project.version}.jar")
+
+    relocate 'dev.jorel.commandapi', 'net.itsthesky.commandapi'
 }
 
 processResources {

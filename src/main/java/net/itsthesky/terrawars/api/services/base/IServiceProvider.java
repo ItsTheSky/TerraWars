@@ -68,7 +68,8 @@ public interface IServiceProvider {
      * registers them with the provider, and injects dependencies.
      *
      * @param packageName The name of the package to scan
+     * @param subPackages Optional sub-packages to scan
      * @throws IOException If an error occurs during package scanning
      */
-    void injectServices(@NotNull String packageName) throws IOException;
+    void injectServices(@NotNull String packageName, String... subPackages) throws IOException;
 }
