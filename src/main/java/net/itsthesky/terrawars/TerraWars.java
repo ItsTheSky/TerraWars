@@ -23,6 +23,9 @@ public final class TerraWars extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        getLogger().info("TerraWars is stopping...");
+
+        if (serviceProvider != null)
+            serviceProvider.disableServices();
     }
 }

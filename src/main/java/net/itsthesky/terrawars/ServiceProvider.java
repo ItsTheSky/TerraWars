@@ -1,6 +1,7 @@
 package net.itsthesky.terrawars;
 
 import com.google.common.collect.Sets;
+import net.itsthesky.terrawars.api.services.base.IService;
 import net.itsthesky.terrawars.api.services.base.IServiceProvider;
 import net.itsthesky.terrawars.api.services.base.Service;
 import net.itsthesky.terrawars.util.Checks;
@@ -139,6 +140,23 @@ public class ServiceProvider implements IServiceProvider {
             Object service = entry.getValue();
             injectDependencies(service);
         }
+
+        // Third phase: init every service if they can
+        for (Map.Entry<Class<?>, Object> entry : newServices.entrySet()) {
+            Object service = entry.getValue();
+            if (service instanceof IServiceProvider)
+                continue;
+
+            if (service instanceof final IService serv)
+                serv.init();
+        }
+    }
+
+    @Override
+    public void disableServices() {
+        for (Object service : services.values())
+            if (service instanceof IService iService)
+                iService.destroy();
     }
 
     private void injectDependencies(Object serviceInstance) {
