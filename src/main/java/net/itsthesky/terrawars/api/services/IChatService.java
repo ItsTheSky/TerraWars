@@ -24,7 +24,7 @@ public interface IChatService {
          * Simple/Neutral message. May only be used for debugs,
          * notification or simple messages.
          */
-        NEUTRAL("<#64748b><bold>[</bold><#cbd5e1>✎<bold><#64748b>]<reset><#e2e8f0>"),
+        NEUTRAL("<#64748b><bold>[</bold><#cbd5e1>✎<bold><#64748b>]<reset><#e2e8f0> "),
 
         /**
          * Warning message. May be used for warning messages,
@@ -42,19 +42,19 @@ public interface IChatService {
          * Success message. May be used for success messages,
          * or important messages.
          */
-        SUCCESS("<#22c55e><bold>[</bold><#bbf7d0>✔<bold><#22c55e>]<reset><#bbf7d0>"),
+        SUCCESS("<#22c55e><bold>[</bold><#bbf7d0>✔<bold><#22c55e>]<reset><#bbf7d0> "),
 
         /**
          * Info message. May be used for info messages,
          * or important messages.
          */
-        INFO("<#3b82f6><bold>[</bold><#bfdbfe>ℹ<bold><#3b82f6>]<reset><#bfdbfe>"),
+        INFO("<#3b82f6><bold>[</bold><#bfdbfe>ℹ<bold><#3b82f6>]<reset><#bfdbfe> "),
 
         /**
          * Debug message. May be used for debug messages,
          * or important messages.
          */
-        DEBUG("<#a855f7><bold>[</bold><#e0cfe9>🐞<bold><#a855f7>]<reset><#e0cfe9>");
+        DEBUG("<#a855f7><bold>[</bold><#e0cfe9>🐞<bold><#a855f7>]<reset><#e0cfe9> ");
 
         private final String rawPrefix;
 
