@@ -1,0 +1,6 @@
+name: TerraWars
+version: '1.0.0'
+main: net.itsthesky.terrawars.TerraWars
+api-version: '1.21'
+authors: [ ItsTheSky ]
+website: projecta.itsthesky.net
