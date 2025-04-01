@@ -5,9 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.Set;
 
-/**
- * Provider for all services.
- */
+
 /**
  * Provider for all services.
  */
@@ -72,4 +70,9 @@ public interface IServiceProvider {
      * @throws IOException If an error occurs during package scanning
      */
     void injectServices(@NotNull String packageName, String... subPackages) throws IOException;
+
+    /**
+     * Inject services into an instance.
+     */
+    <T> void inject(@NotNull T instance);
 }

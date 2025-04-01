@@ -48,7 +48,6 @@ public class ServiceProvider implements IServiceProvider {
     @SuppressWarnings("unchecked")
     public <T> T getService(@NotNull Class<T> serviceClass) {
         Checks.notNull(serviceClass, "Service class cannot be null");
-        Checks.isTrue(serviceClass != IServiceProvider.class, "Cannot get IServiceProvider as a service");
 
         if (!services.containsKey(serviceClass))
             throw new IllegalArgumentException("Service not registered: " + serviceClass.getName());
@@ -59,8 +58,6 @@ public class ServiceProvider implements IServiceProvider {
     @Override
     public <T> boolean isServiceRegistered(@NotNull Class<T> serviceClass) {
         Checks.notNull(serviceClass, "Service class cannot be null");
-        Checks.isTrue(serviceClass != IServiceProvider.class, "Cannot check IServiceProvider as a service");
-
         return services.containsKey(serviceClass);
     }
 
@@ -198,7 +195,7 @@ public class ServiceProvider implements IServiceProvider {
 
             // Quatrième phase: injecter les dépendances
             for (Map.Entry<Class<?>, Object> entry : newServices.entrySet()) {
-                injectDependencies(entry.getValue());
+                inject(entry.getValue());
             }
 
             // Cinquième phase: initialiser les services
@@ -258,7 +255,8 @@ public class ServiceProvider implements IServiceProvider {
                 iService.destroy();
     }
 
-    private void injectDependencies(Object serviceInstance) {
+    @Override
+    public <T> void inject(@NotNull T serviceInstance) {
         Class<?> serviceClass = serviceInstance.getClass();
 
         for (Field field : serviceClass.getDeclaredFields()) {

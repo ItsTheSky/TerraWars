@@ -7,4 +7,5 @@ public interface ICommandService {
 
     void registerCommand(@NotNull CommandAPICommand command);
 
+    void registerSubCommand(@NotNull CommandAPICommand command);
 }

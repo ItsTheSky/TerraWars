@@ -1,9 +1,17 @@
 package net.itsthesky.terrawars.api.services;
 
 import lombok.Getter;
+import net.itsthesky.terrawars.util.Colors;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.time.Duration;
+import java.util.List;
 
 /**
  * This interface defines the contract for a chat service.
@@ -12,6 +20,118 @@ import org.jetbrains.annotations.NotNull;
  * messages, and adventure API to send them.
  */
 public interface IChatService {
+
+    /**
+     * A message builder.
+     */
+    @Getter
+    class MessageBuilder {
+
+        private String message;
+        private Audience audience;
+        private List<TextColor> scheme;
+
+        private MessageSeverity severity;
+        private Object[] args;
+        private Player source;
+
+        public MessageBuilder() {
+            this.args = new Object[0];
+        }
+
+        public MessageBuilder message(@NotNull String message) {
+            this.message = message;
+            return this;
+        }
+
+        public MessageBuilder audience(@NotNull Audience audience) {
+            this.audience = audience;
+            return this;
+        }
+
+        public MessageBuilder scheme(@Nullable List<TextColor> scheme) {
+            this.scheme = scheme;
+            return this;
+        }
+
+        public MessageBuilder severity(@NotNull MessageSeverity severity) {
+            this.severity = severity;
+            return scheme(severity.getScheme());
+        }
+
+        public MessageBuilder args(@Nullable Object... args) {
+            this.args = args;
+            return this;
+        }
+
+        public MessageBuilder source(@Nullable Player source) {
+            this.source = source;
+            return this;
+        }
+
+        public boolean isValid() {
+            return message != null && audience != null;
+        }
+    }
+
+    @Getter
+    class TitleBuilder {
+        private Audience audience;
+
+        private String title;
+        private String subtitle;
+
+        private Duration fadeIn;
+        private Duration stay;
+        private Duration fadeOut;
+
+        private List<TextColor> scheme;
+
+        public TitleBuilder() {
+            this.fadeIn = Duration.ofSeconds(1);
+            this.stay = Duration.ofSeconds(3);
+            this.fadeOut = Duration.ofSeconds(1);
+        }
+
+        public TitleBuilder audience(@NotNull Audience audience) {
+            this.audience = audience;
+            return this;
+        }
+
+        public TitleBuilder title(String title) {
+            this.title = title;
+            return this;
+        }
+
+        public TitleBuilder subtitle(String subtitle) {
+            this.subtitle = subtitle;
+            return this;
+        }
+
+        public TitleBuilder fadeIn(Duration fadeIn) {
+            this.fadeIn = fadeIn;
+            return this;
+        }
+
+        public TitleBuilder stay(Duration stay) {
+            this.stay = stay;
+            return this;
+        }
+
+        public TitleBuilder fadeOut(Duration fadeOut) {
+            this.fadeOut = fadeOut;
+            return this;
+        }
+
+        public TitleBuilder scheme(List<TextColor> scheme) {
+            this.scheme = scheme;
+            return this;
+        }
+
+        public boolean isValid() {
+            return title != null && subtitle != null && audience != null;
+        }
+    }
 
     /**
      * This enum defines the severity of a message sent
@@ -24,42 +144,44 @@ public interface IChatService {
          * Simple/Neutral message. May only be used for debugs,
          * notification or simple messages.
          */
-        NEUTRAL("<#64748b><bold>[</bold><#cbd5e1>✎<bold><#64748b>]<reset><#e2e8f0> "),
+        NEUTRAL(Colors.SLATE, 'N'),
 
         /**
          * Warning message. May be used for warning messages,
          * or important messages.
          */
-        WARNING("<#fbbf24><bold>[</bold><#fef08a>⚠<bold><#fbbf24>]<reset><#fef3c7> "),
+        WARNING(Colors.AMBER, 'W'),
 
         /**
          * Error message. May be used for error messages,
          * or important messages.
          */
-        ERROR("<#dc2626><bold>[</bold><#fee2e2>✘<bold><#dc2626>]<reset><#fecaca> "),
+        ERROR(Colors.RED, 'X'),
 
         /**
          * Success message. May be used for success messages,
          * or important messages.
          */
-        SUCCESS("<#22c55e><bold>[</bold><#bbf7d0>✔<bold><#22c55e>]<reset><#bbf7d0> "),
+        SUCCESS(Colors.GREEN, 'Y'),
 
         /**
          * Info message. May be used for info messages,
          * or important messages.
          */
-        INFO("<#3b82f6><bold>[</bold><#bfdbfe>ℹ<bold><#3b82f6>]<reset><#bfdbfe> "),
+        INFO(Colors.BLUE, 'I'),
 
         /**
          * Debug message. May be used for debug messages,
          * or important messages.
          */
-        DEBUG("<#a855f7><bold>[</bold><#e0cfe9>🐞<bold><#a855f7>]<reset><#e0cfe9> ");
+        DEBUG(Colors.INDIGO, 'D');
 
-        private final String rawPrefix;
+        private final List<TextColor> scheme;
+        private final char icon;
 
-        MessageSeverity(String rawPrefix) {
-            this.rawPrefix = rawPrefix;
+        MessageSeverity(List<TextColor> scheme, char icon) {
+            this.scheme = scheme;
+            this.icon = icon;
         }
     }
 
@@ -70,7 +192,12 @@ public interface IChatService {
      * @param severity the severity of the message
      * @param message the message to send
      */
-    void sendMessage(@NotNull Audience audience, @NotNull MessageSeverity severity, @NotNull String message);
+    default void sendMessage(@NotNull Audience audience, @NotNull MessageSeverity severity, @NotNull String message) {
+        sendMessage(new MessageBuilder()
+                .audience(audience)
+                .severity(severity)
+                .message(message));
+    }
 
     /**
      * Send a message to a specific audience. The given
@@ -83,7 +210,22 @@ public interface IChatService {
      * @param message the message to send
      * @param args the arguments to format the message with
      */
-    void sendMessage(@NotNull Audience audience, @NotNull MessageSeverity severity, @NotNull String message, Object... args);
+    default void sendMessage(@NotNull Audience audience, @NotNull MessageSeverity severity, @NotNull String message, Object... args) {
+        sendMessage(new MessageBuilder()
+                .audience(audience)
+                .severity(severity)
+                .message(message)
+                .args(args));
+    }
+
+    /**
+     * Sends a message using a pre-built message builder.
+     * @param builder the message builder to use
+     * @throws IllegalArgumentException if the builder is not valid
+     * @see MessageBuilder
+     * @see #sendMessage(Audience, MessageSeverity, String)
+     */
+    void sendMessage(@NotNull IChatService.MessageBuilder builder);
 
     /**
      * Construct a component from a message. The given
@@ -91,5 +233,13 @@ public interface IChatService {
      * @param message the message to format
      * @return the formatted message
      */
-    @NotNull Component format(@NotNull String message);
+    @NotNull Component format(@NotNull String message, @NotNull TagResolver... tagResolvers);
+
+    /**
+     * Send a title & subtitle using a pre-built title builder.
+     * @param builder the title builder to use
+     * @throws IllegalArgumentException if the builder is not valid
+     * @see TitleBuilder
+     */
+    void sendTitle(@NotNull TitleBuilder builder);
 }

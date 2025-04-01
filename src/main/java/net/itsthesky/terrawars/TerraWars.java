@@ -5,10 +5,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class TerraWars extends JavaPlugin {
 
+    private static TerraWars plugin;
     private static IServiceProvider serviceProvider;
 
     @Override
     public void onEnable() {
+        plugin = this;
+
         getLogger().info("TerraWars is starting...");
 
         serviceProvider = new ServiceProvider(this);
@@ -29,5 +32,9 @@ public final class TerraWars extends JavaPlugin {
 
         if (serviceProvider != null)
             serviceProvider.disableServices();
+    }
+
+    public static TerraWars instance() {
+        return plugin;
     }
 }
