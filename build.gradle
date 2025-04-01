@@ -32,6 +32,12 @@ dependencies {
 
     // CommandAPI
     implementation 'dev.jorel:commandapi-bukkit-shade-mojang-mapped:9.7.0'
+
+    // GSON
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    // IF
+    implementation 'com.github.stefvanschie.inventoryframework:IF:0.10.19'
 }
 
 java {
@@ -46,6 +52,7 @@ shadowJar {
     archiveFileName.set("${project.name} v${project.version}.jar")
 
     relocate 'dev.jorel.commandapi', 'net.itsthesky.commandapi'
+    relocate 'com.github.stefvanschie.inventoryframework', 'net.itsthesky.inventoryframework'
 }
 
 processResources {
