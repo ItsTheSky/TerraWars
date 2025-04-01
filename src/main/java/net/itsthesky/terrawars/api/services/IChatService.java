@@ -235,6 +235,8 @@ public interface IChatService {
      */
     @NotNull Component format(@NotNull String message, @NotNull TagResolver... tagResolvers);
 
+    @NotNull Component format(@NotNull String message, @NotNull List<TextColor> scheme, @NotNull TagResolver... tagResolvers);
+
     /**
      * Send a title & subtitle using a pre-built title builder.
      * @param builder the title builder to use

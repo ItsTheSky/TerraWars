@@ -6,6 +6,7 @@ import net.itsthesky.terrawars.util.Checks;
 import net.itsthesky.terrawars.util.Colors;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -13,6 +14,7 @@ import net.kyori.adventure.title.Title;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,8 +29,23 @@ public class ChatService implements IChatService {
 
     @Override
     public @NotNull Component format(@NotNull String message, @NotNull TagResolver... tagResolvers) {
+        return format(message, Colors.AMBER, tagResolvers);
+    }
+
+    @Override
+    public @NotNull Component format(@NotNull String message, @NotNull List<TextColor> scheme, @NotNull TagResolver... tagResolvers) {
         Checks.notNull(message, "Message cannot be null");
-        return MINI_MESSAGE.deserialize(message, tagResolvers);
+        Checks.notNull(scheme, "Scheme cannot be null");
+
+        final var placeholders = List.of(
+                Placeholder.styling("text", scheme.get(Colors.SHADE_200)),
+                Placeholder.styling("base", scheme.get(Colors.SHADE_500)),
+                Placeholder.styling("accent", scheme.get(Colors.SHADE_700))
+        );
+        final var placeholdersWithTagResolvers = new ArrayList<TagResolver>(placeholders);
+        placeholdersWithTagResolvers.addAll(Arrays.asList(tagResolvers));
+
+        return MINI_MESSAGE.deserialize(message, TagResolver.resolver(placeholdersWithTagResolvers));
     }
 
     @Override

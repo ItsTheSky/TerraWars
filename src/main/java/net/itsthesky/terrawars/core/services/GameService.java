@@ -7,22 +7,25 @@ import dev.jorel.commandapi.arguments.WorldArgument;
 import net.itsthesky.terrawars.api.model.biome.IBiome;
 import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
-import net.itsthesky.terrawars.api.services.IChatService;
-import net.itsthesky.terrawars.api.services.ICommandService;
-import net.itsthesky.terrawars.api.services.IGameService;
+import net.itsthesky.terrawars.api.services.*;
 import net.itsthesky.terrawars.api.services.base.IService;
 import net.itsthesky.terrawars.api.services.base.IServiceProvider;
 import net.itsthesky.terrawars.api.services.base.Inject;
 import net.itsthesky.terrawars.api.services.base.Service;
+import net.itsthesky.terrawars.core.config.GameConfig;
+import net.itsthesky.terrawars.core.config.GameTeamConfig;
 import net.itsthesky.terrawars.core.impl.game.Game;
 import net.itsthesky.terrawars.util.Checks;
+import net.itsthesky.terrawars.util.Colors;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class GameService implements IGameService, IService {
@@ -30,6 +33,8 @@ public class GameService implements IGameService, IService {
     @Inject private ICommandService commandService;
     @Inject private IChatService chatService;
     @Inject private IServiceProvider serviceProvider;
+    @Inject private IConfigService configService;
+    @Inject private IConfigInterfaceService configInterfaceService;
 
     private final Map<UUID, IGame> games = new HashMap<>();
 
@@ -69,7 +74,7 @@ public class GameService implements IGameService, IService {
     @Override
     public void init() {
         commandService.registerCommand(new CommandAPICommand("games")
-                .withSubcommand(new CommandAPICommand("create")
+                .withSubcommand(new CommandAPICommand("old_create")
                         .withArguments(List.of(
                                 new WorldArgument("game_world"),
                                 new MultiLiteralArgument("game_size", "SOLO", "DUO", "SQUAD")
@@ -117,6 +122,109 @@ public class GameService implements IGameService, IService {
 
                             chatService.sendMessage(player, IChatService.MessageSeverity.SUCCESS, "You joined the game with ID <base>" + gameId + "<text>!");
                         }))
+                .withSubcommand(new CommandAPICommand("create")
+                        .withArguments(new StringArgument("name"))
+                        .executesPlayer((player, args) -> {
+                            final String configName = (String) args.get("name");
+
+                            // Check if file already exists
+                            final File configFile = configService.getFile("games", configName + ".json");
+                            if (configFile.exists()) {
+                                chatService.sendMessage(player, IChatService.MessageSeverity.ERROR,
+                                        "A game configuration with name <accent>" + configName + "<text> already exists!");
+                                return;
+                            }
+
+                            // Create new GameConfig with default values
+                            final GameConfig gameConfig = new GameConfig();
+
+                            // Initialize with 4 teams
+                            List<GameTeamConfig> teams = new ArrayList<>(4);
+                            for (int i = 0; i < 4; i++)
+                                teams.add(new GameTeamConfig());
+                            gameConfig.setTeams(teams);
+
+                            // Open the configuration GUI
+                            chatService.sendMessage(player, IChatService.MessageSeverity.INFO,
+                                    "Creating a new game configuration: <accent>" + configName);
+
+                            configInterfaceService.openConfigGui(player, gameConfig, "Game Config: " + configName, (config) -> {
+                                // When saved, write to file
+                                try {
+                                    // Create directories if needed
+                                    final File gamesDir = configService.getFile("games");
+                                    if (!gamesDir.exists()) {
+                                        gamesDir.mkdirs();
+                                    }
+
+                                    configService.save(config, "games" + File.separator + configName + ".json");
+
+                                    chatService.sendMessage(player, IChatService.MessageSeverity.SUCCESS,
+                                            "Game configuration <accent>" + configName + "<text> saved successfully! You may now load it with /games load <accent>" + configName);
+                                } catch (Exception e) {
+                                    chatService.sendMessage(player, IChatService.MessageSeverity.ERROR,
+                                            "Failed to save game configuration: <base>" + e.getMessage());
+                                    e.printStackTrace();
+                                }
+                            });
+                        })
+                .withSubcommand(new CommandAPICommand("load")
+                        .withArguments(new StringArgument("name")))
+                        .executesPlayer((player, args) -> {
+                            final String configName = (String) args.get("name");
+
+                            // Check if file exists
+                            final File configFile = configService.getFile("games", configName + ".json");
+                            if (!configFile.exists()) {
+                                chatService.sendMessage(player, IChatService.MessageSeverity.ERROR,
+                                        "Game configuration <accent>" + configName + "<text> does not exist!");
+                                return;
+                            }
+
+                            try {
+                                // Load the config
+                                final GameConfig gameConfig = configService.load(GameConfig.class, "games" + File.separator + configName + ".json");
+
+                                // Create the game
+                                final var game = createGame(
+                                        gameConfig.getWorld(),
+                                        gameConfig.getLobby(),
+                                        gameConfig.getGameSize(),
+                                        Set.of()
+                                );
+
+                                chatService.sendMessage(player, IChatService.MessageSeverity.SUCCESS,
+                                        "Game created successfully! ID: <accent>" + game.getId());
+
+                                // Show title to player
+                                chatService.sendTitle(new IChatService.TitleBuilder()
+                                        .audience(player)
+                                        .title("Game Created")
+                                        .subtitle("ID: " + game.getId())
+                                        .scheme(Colors.GREEN)
+                                        .fadeIn(java.time.Duration.ofMillis(500))
+                                        .stay(java.time.Duration.ofSeconds(3))
+                                        .fadeOut(java.time.Duration.ofMillis(500))
+                                );
+
+                            } catch (Exception e) {
+                                chatService.sendMessage(player, IChatService.MessageSeverity.ERROR,
+                                        "Failed to load game configuration: <base>" + e.getMessage());
+                                e.printStackTrace();
+                            }
+                        }))
         );
+    }
+
+    private String[] getAvailableConfigs() {
+        final File gamesDir = configService.getFile("games");
+        if (!gamesDir.exists() || !gamesDir.isDirectory()) {
+            return new String[0];
+        }
+
+        return Arrays.stream(Objects.requireNonNull(gamesDir.listFiles()))
+                .filter(file -> file.isFile() && file.getName().endsWith(".json"))
+                .map(file -> file.getName().replace(".json", ""))
+                .toArray(String[]::new);
     }
 }
