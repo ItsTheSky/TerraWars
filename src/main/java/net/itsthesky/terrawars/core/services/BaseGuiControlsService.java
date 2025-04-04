@@ -114,7 +114,7 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
         return format(value, null);
     }
 
-    private List<String> buildChatLore(InputControlData<String> inputData) {
+    private <T> List<String> buildChatLore(InputControlData<T> inputData) {
         final var lore = new ArrayList<String>();
         lore.add("");
         for (String line : inputData.getDescription())
@@ -209,11 +209,9 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
 
             if (event.getClick().equals(ClickType.DROP)) {
                 event.setCancelled(true);
-                if (inputData.getOnReset() != null) {
-                    inputData.getOnReset().accept(event, inputData);
-                    item.lore(Colors.YELLOW, buildChatLore(inputData).toArray(new String[0]));
-                    gui.update();
-                }
+                inputData.getOnInput().accept(inputData.getDefaultValue(), inputData);
+                item.lore(Colors.YELLOW, buildChatLore(inputData).toArray(new String[0]));
+                gui.update();
                 return;
             }
 
@@ -223,7 +221,6 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
             waitingForChat.put(event.getWhoClicked().getUniqueId(), asyncChatEvent -> BukkitUtils.sync(() -> {
                 final var msg = chatService.unformat(asyncChatEvent.message());
                 if (msg.equalsIgnoreCase("cancel")) {
-                    inputData.getOnCancel().accept(event, inputData);
                     chatService.sendMessage(asyncChatEvent.getPlayer(), IChatService.MessageSeverity.INFO, "Input cancelled.");
                     gui.show(asyncChatEvent.getPlayer());
                     return;
@@ -236,6 +233,50 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
 
                 } else {
                     chatService.sendMessage(asyncChatEvent.getPlayer(), IChatService.MessageSeverity.ERROR, "Invalid input.");
+                }
+
+                gui.show(asyncChatEvent.getPlayer());
+            }));
+        };
+
+        return new GuiItem(item.getItem(), consumer);
+    }
+
+    @Override
+    public @NotNull GuiItem createNumericInputControl(@NotNull String instructions, @NotNull InputControlData<Integer> inputData) {
+        final var item = new ItemBuilder(inputData.getMaterial())
+                .name("<accent><b>✏</b> <base>" + inputData.getName(), Colors.YELLOW)
+                .lore(Colors.YELLOW, buildChatLore(inputData).toArray(new String[0]));
+
+        final Consumer<InventoryClickEvent> consumer = event -> {
+            final @NotNull var gui = (ChestGui) Objects.requireNonNull(event.getInventory().getHolder());
+
+            if (event.getClick().equals(ClickType.DROP)) {
+                event.setCancelled(true);
+                inputData.getOnInput().accept(inputData.getDefaultValue(), inputData);
+                item.lore(Colors.YELLOW, buildChatLore(inputData).toArray(new String[0]));
+                gui.update();
+                return;
+            }
+
+            event.getWhoClicked().closeInventory();
+            chatService.sendMessage(event.getWhoClicked(), IChatService.MessageSeverity.INFO, instructions);
+
+            waitingForChat.put(event.getWhoClicked().getUniqueId(), asyncChatEvent -> BukkitUtils.sync(() -> {
+                final var msg = chatService.unformat(asyncChatEvent.message());
+                if (msg.equalsIgnoreCase("cancel")) {
+                    chatService.sendMessage(asyncChatEvent.getPlayer(), IChatService.MessageSeverity.INFO, "Input cancelled.");
+                    gui.show(asyncChatEvent.getPlayer());
+                    return;
+                }
+
+                try {
+                    final var value = Integer.parseInt(msg);
+                    inputData.getOnInput().accept(value, inputData);
+                    item.lore(Colors.YELLOW, buildChatLore(inputData).toArray(new String[0]));
+                    gui.update();
+                } catch (NumberFormatException e) {
+                    chatService.sendMessage(asyncChatEvent.getPlayer(), IChatService.MessageSeverity.ERROR, "Invalid input (must be a number).");
                 }
 
                 gui.show(asyncChatEvent.getPlayer());
@@ -260,11 +301,9 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
             final @NotNull var gui = (ChestGui) Objects.requireNonNull(event.getInventory().getHolder());
             event.setCancelled(true);
             if (event.getClick().equals(ClickType.DROP)) {
-                if (inputData.getOnReset() != null) {
-                    inputData.getOnReset().accept(event, inputData);
-                    item.lore(Colors.YELLOW, buildComboBoxLore(options, inputData, displayFunction).toArray(new String[0]));
-                    gui.update();
-                }
+                inputData.getOnInput().accept(inputData.getDefaultValue(), inputData);
+                item.lore(Colors.YELLOW, buildComboBoxLore(options, inputData, displayFunction).toArray(new String[0]));
+                gui.update();
                 return;
             }
 
@@ -298,11 +337,9 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
             final @NotNull var gui = (ChestGui) Objects.requireNonNull(event.getInventory().getHolder());
             event.setCancelled(true);
             if (event.getClick().equals(ClickType.DROP)) {
-                if (inputData.getOnReset() != null) {
-                    inputData.getOnReset().accept(event, inputData);
-                    item.lore(Colors.YELLOW, buildLocationLore(inputData).toArray(new String[0]));
-                    gui.update();
-                }
+                inputData.getOnInput().accept(inputData.getDefaultValue(), inputData);
+                item.lore(Colors.YELLOW, buildLocationLore(inputData).toArray(new String[0]));
+                gui.update();
                 return;
             }
 
@@ -361,11 +398,9 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
             final @NotNull var gui = (ChestGui) Objects.requireNonNull(event.getInventory().getHolder());
 
             if (event.getClick().equals(ClickType.DROP)) {
-                if (inputData.getOnReset() != null) {
-                    inputData.getOnReset().accept(event, inputData);
-                    mainItem.lore(Colors.YELLOW, buildWorldSelectorLore(inputData).toArray(new String[0]));
-                    gui.update();
-                }
+                inputData.getOnInput().accept(inputData.getDefaultValue(), inputData);
+                mainItem.lore(Colors.YELLOW, buildWorldSelectorLore(inputData).toArray(new String[0]));
+                gui.update();
                 return;
             }
 
@@ -414,7 +449,7 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
             }), Slot.fromIndex(0));
             controlsPane.addItem(createResetButton(evt -> {
                 evt.setCancelled(true);
-                inputData.getOnReset().accept(evt, inputData);
+                inputData.getOnInput().accept(inputData.getDefaultValue(), inputData);
                 mainItem.lore(Colors.YELLOW, buildWorldSelectorLore(inputData).toArray(new String[0]));
                 gui.update();
             }), Slot.fromIndex(4));

@@ -186,6 +186,28 @@ public interface IChatService {
     }
 
     /**
+     * Join the given components together into a
+     * single one.
+     * @param components the components to join
+     * @param joiner the joiner to use
+     * @return the joined component
+     */
+    default @NotNull Component join(@NotNull List<Component> components, @NotNull Component joiner) {
+        return components.stream()
+                .reduce(joiner, Component::append);
+    }
+
+    /**
+     * Join the given components together into a
+     * single one, using a newline as the joiner.
+     * @param components the components to join
+     * @return the joined component
+     */
+    default @NotNull Component joinNewLine(@NotNull List<Component> components) {
+        return join(components, Component.newline());
+    }
+
+    /**
      * Send a message to a specific audience. The given
      * message may contain MiniMessage tags.
      * @param audience the audience to send the message to

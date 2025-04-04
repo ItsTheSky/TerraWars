@@ -2,6 +2,7 @@ package net.itsthesky.terrawars.api.services;
 
 import net.itsthesky.terrawars.api.model.biome.IBiome;
 import net.itsthesky.terrawars.api.model.game.IGame;
+import net.itsthesky.terrawars.core.config.GameConfig;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
@@ -23,10 +24,7 @@ public interface IGameService {
 
     @Nullable IGame getGame(@NotNull UUID uuid);
 
-    @NotNull IGame createGame(@NotNull World world,
-                              @NotNull Location lobby,
-                              @NotNull IGame.GameSize size,
-                              @NotNull Set<IBiome> availableBiomes);
+    @NotNull IGame createGame(@NotNull GameConfig config);
 
     @Nullable IGame getPlayerGame(@NotNull UUID playerId);
 }

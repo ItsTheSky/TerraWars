@@ -6,6 +6,7 @@ import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.model.game.IGameNexus;
 import net.itsthesky.terrawars.api.model.game.IGamePlayer;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
+import net.itsthesky.terrawars.core.config.GameTeamConfig;
 import net.itsthesky.terrawars.util.Colors;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.entity.Player;
@@ -17,16 +18,18 @@ import java.util.*;
 @Getter
 public class GameTeam implements IGameTeam {
 
+    private final GameTeamConfig config;
     private final Map<UUID, GamePlayer> players;
     private final Game game;
     private final IBiome biome;
     private final IGameNexus nexus;
 
-    public GameTeam(Game game, IBiome biome, IGameNexus nexus) {
+    public GameTeam(GameTeamConfig config, Game game) {
         this.players = new HashMap<>(game.getSize().getPlayerPerTeam());
         this.game = game;
-        this.biome = biome;
-        this.nexus = nexus;
+        this.config = config;
+        this.nexus = new GameNexus(this);
+        this.biome = null; // TODO: Initialize biome
     }
 
     @Override

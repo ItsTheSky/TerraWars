@@ -11,6 +11,7 @@ import net.itsthesky.terrawars.api.model.game.IGameTeam;
 import net.itsthesky.terrawars.api.services.IChatService;
 import net.itsthesky.terrawars.api.services.base.IServiceProvider;
 import net.itsthesky.terrawars.api.services.base.Inject;
+import net.itsthesky.terrawars.core.config.GameConfig;
 import net.itsthesky.terrawars.core.events.game.GameStateChangeEvent;
 import net.itsthesky.terrawars.util.BukkitUtils;
 import net.itsthesky.terrawars.util.Checks;
@@ -41,22 +42,20 @@ public class Game implements IGame {
     @Inject private IChatService chatService;
     private final IServiceProvider serviceProvider;
 
+    private final GameConfig config;
     private final List<GameTeam> teams;
     private final Set<GamePlayer> waitingPlayers;
     private final UUID id;
-    private final World world;
-    private final Location lobbyLocation;
     private final int maxPlayers;
-    private final GameSize size;
 
     private GameState state;
     private BukkitTask startCountdownTask;
 
     public Game(@NotNull IServiceProvider serviceProvider,
-                @NotNull World world, @NotNull GameSize size,
-                @NotNull Location lobbyLocation) {
+                @NotNull GameConfig config) {
         serviceProvider.inject(this);
         this.serviceProvider = serviceProvider;
+        this.config = config;
 
         BukkitUtils.registerListener(new GameListener());
 
@@ -65,15 +64,10 @@ public class Game implements IGame {
         this.teams = new ArrayList<>();
         this.waitingPlayers = new HashSet<>();
 
-        this.world = world;
-        this.size = size;
-        this.lobbyLocation = lobbyLocation;
-
-        this.maxPlayers = size.getPlayerPerTeam() * 4;
+        this.maxPlayers = this.config.getGameSize().getPlayerPerTeam() * 4;
     }
 
     //region Getters
-
 
     @Override
     public @NotNull Set<IGamePlayer> getWaitingPlayers() {
@@ -81,6 +75,21 @@ public class Game implements IGame {
             throw new IllegalStateException("Cannot get waiting players when not in WAITING state.");
 
         return Set.copyOf(waitingPlayers);
+    }
+
+    @Override
+    public @NotNull GameSize getSize() {
+        return config.getGameSize();
+    }
+
+    @Override
+    public @NotNull World getWorld() {
+        return this.config.getWorld();
+    }
+
+    @Override
+    public @NotNull Location getLobbyLocation() {
+        return this.config.getLobby();
     }
 
     @Override
@@ -124,7 +133,7 @@ public class Game implements IGame {
 
         final var gamePlayer = new GamePlayer(player, this);
         waitingPlayers.add(gamePlayer);
-        player.teleport(lobbyLocation);
+        player.teleport(getLobbyLocation());
 
         broadcastMessage(IChatService.MessageSeverity.INFO,
                 "<base>" + player.getName() + "<text> joined the game. <accent>[<text>" + waitingPlayers.size() + "<accent>/<text>" + maxPlayers + "<accent>]");
@@ -263,10 +272,11 @@ public class Game implements IGame {
         // 3. set the game state to RUNNING
 
         this.teams.clear();
-        for (int i = 0; i < 4; i++) {
-            final var team = new GameTeam(this, null, null);
+        for (final var cfg : config.getTeams()) {
+            final var team = new GameTeam(cfg, this);
             teams.add(team);
         }
+
         final var players = new ArrayList<>(waitingPlayers);
         Collections.shuffle(players);
 

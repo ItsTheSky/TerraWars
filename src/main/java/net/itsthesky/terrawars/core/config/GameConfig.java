@@ -8,6 +8,7 @@ import net.itsthesky.terrawars.api.model.game.IGame;
 import org.bukkit.Location;
 import org.bukkit.World;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,11 +17,17 @@ import java.util.List;
 @NoArgsConstructor
 public class GameConfig {
 
+
     private World world;
     private Location lobby;
-    private List<GameTeamConfig> teams = new ArrayList<>();
+    private ArrayList<GameTeamConfig> teams = new ArrayList<>();
 
     @SerializedName("game_size")
     private IGame.GameSize gameSize = IGame.GameSize.SOLO;
 
+    private transient Runnable saveRunnable;
+    public void save() {
+        if (saveRunnable != null)
+            saveRunnable.run();
+    }
 }

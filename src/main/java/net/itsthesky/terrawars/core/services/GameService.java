@@ -29,6 +29,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -64,19 +66,10 @@ public class GameService implements IGameService, IService {
     }
 
     @Override
-    public @NotNull IGame createGame(@NotNull World world,
-                                     @NotNull Location lobby,
-                                     IGame.@NotNull GameSize size,
-                                     @NotNull Set<IBiome> availableBiomes) {
-        Checks.notNull(world, "World cannot be null");
-        Checks.notNull(lobby, "Lobby location cannot be null");
-        Checks.notNull(size, "Game size cannot be null");
-        Checks.notNull(availableBiomes, "Available biomes cannot be null");
+    public @NotNull IGame createGame(@NotNull GameConfig config) {
+        Checks.notNull(config, "Config cannot be null");
 
-        // Checks.isTrue(availableBiomes.size() > 0, "Available biomes cannot be empty");
-        Checks.isTrue(availableBiomes.size() <= 4, "Available biomes cannot be more than 4");
-
-        final var game = new Game(serviceProvider, world, size, lobby);
+        final var game = new Game(serviceProvider, config);
         games.put(game.getId(), game);
         game.setState(IGame.GameState.WAITING);
         // game.setAvailableBiomes(availableBiomes);
@@ -97,19 +90,6 @@ public class GameService implements IGameService, IService {
     @Override
     public void init() {
         commandService.registerCommand(new CommandAPICommand("games")
-                .withSubcommand(new CommandAPICommand("old_create")
-                        .withArguments(List.of(
-                                new WorldArgument("game_world"),
-                                new MultiLiteralArgument("game_size", "SOLO", "DUO", "SQUAD")
-                        ))
-                        .executesPlayer((player, args) -> {
-                            final var world = (World) args.get("game_world");
-                            final var size = IGame.GameSize.valueOf(((String) Objects.requireNonNull(args.get("game_size"))).toUpperCase(Locale.ROOT));
-
-                            assert world != null;
-                            final var game = createGame(world, player.getLocation(), size, Set.of());
-                            chatService.sendMessage(player, IChatService.MessageSeverity.SUCCESS, "Game created with size " + size.name() + " in world " + world.getName() + " at location " + player.getLocation() + " ID: " + game.getId());
-                        }))
                 .withSubcommand(new CommandAPICommand("select_ability")
                         .executesPlayer((player, args) -> {
                             final var game = getPlayerGame(player.getUniqueId());
@@ -149,7 +129,7 @@ public class GameService implements IGameService, IService {
                                     // 1. create a new game
                                     // 2. make the player joins it
 
-                                    final var game = createGame(player.getWorld(), player.getLocation(), IGame.GameSize.SOLO, Set.of());
+                                    final var game = createGame(configService.load(GameConfig.class, "games" + File.separator + "sample_game.json"));
                                     game.tryAddPlayer(player);
                                 }))
                 .withSubcommand(new CommandAPICommand("join")
@@ -179,81 +159,27 @@ public class GameService implements IGameService, IService {
                             final File configFile = configService.getFile("games", configName + ".json");
                             if (configFile.exists()) {
                                 chatService.sendMessage(player, IChatService.MessageSeverity.ERROR,
-                                        "A game configuration with name <accent>" + configName + "<text> already exists!");
+                                        "A game configuration with name <accent>" + configName + "<text> already exists! Use the <base>/games edit <accent>" + configName + "<text> command to edit it.");
                                 return;
                             }
 
                             // Create new GameConfig with default values
                             final GameConfig gameConfig = new GameConfig();
+                            for (int i = 0; i < 4; i++)
+                                gameConfig.getTeams().add(new GameTeamConfig());
+
+                            gameConfig.setSaveRunnable(() -> {
+                                try {
+                                    configService.save(gameConfig, "games" + File.separator + configName + ".json");
+                                } catch (Exception e) {
+                                    chatService.sendMessage(player, IChatService.MessageSeverity.ERROR,
+                                            "Failed to create/save game configuration: <base>" + e.getMessage());
+                                    e.printStackTrace();
+                                }
+                            });
 
                             final var newGui = gameEditorGuiProvider.createGameEditorGui(gameConfig);
                             newGui.show(player);
-                            if (true)
-                                return;
-
-                            final var gui = new ChestGui(6, "Game Configuration");
-                            final var pane = new StaticPane(0, 0, 9, 6);
-                            pane.addItem(baseGuiControlsService.createChatInputControl("Enter the unique game name used in configurations.", name -> name.length() > 5,
-                                    new IBaseGuiControlsService.InputControlData<>(
-                                            Material.PAPER,
-                                            null, null,
-                                            "Game Name",
-                                            List.of("The unique Game Name requested for the game.", "Another line to try it out!"),
-                                            (name, inputData) -> {
-                                                chatService.sendMessage(player, IChatService.MessageSeverity.WARNING,
-                                                        "Game name set to <accent>" + name + "<text>!");
-                                                inputData.setCurrentValue(name);
-                                            },
-                                            (evt, inputData) -> {
-                                                chatService.sendMessage(player, IChatService.MessageSeverity.WARNING,
-                                                        "Cancel requested.");
-                                            },
-                                            (evt, inputData) -> {
-                                                chatService.sendMessage(player, IChatService.MessageSeverity.WARNING,
-                                                        "Reset requested.");
-                                                inputData.setCurrentValue(null);
-                                            }
-                                    )), 0, 0);
-                            pane.addItem(baseGuiControlsService.createComboBoxInputControl(Arrays.stream(IGame.GameSize.values()).toList(),
-                                    new IBaseGuiControlsService.InputControlData<>(
-                                            Material.NOTE_BLOCK,
-                                            null, IGame.GameSize.SOLO,
-                                            "Game Size",
-                                            List.of("Yay, the game size! Very funny <red>right?"),
-                                            (name, inputData) -> inputData.setCurrentValue(name),
-                                            (evt, inputData) -> { },
-                                            (evt, inputData) -> inputData.setCurrentValue(null)
-                                    ), size -> switch (size) {
-                                        case SOLO -> "Solo (1v1v1v1)";
-                                        case DUO -> "Duo (2v2v2v2)";
-                                        case SQUAD -> "Squad (4v4v4v4)";
-                                    }), 1, 0);
-                            pane.addItem(baseGuiControlsService.createLocationInputControl("Move to the desired location you mother fucker!", new IBaseGuiControlsService.InputControlData<>(
-                                    Material.BEACON,
-                                    null, null,
-                                    "Lobby Location",
-                                    List.of("The location of the lobby.", "Another line to try it out!"),
-                                    (location, inputData) -> {
-                                        chatService.sendMessage(player, IChatService.MessageSeverity.WARNING,
-                                                "Lobby location set to <accent>" + location + "<text>!");
-                                        inputData.setCurrentValue(location);
-                                    },
-                                    (evt, inputData) -> {
-                                        chatService.sendMessage(player, IChatService.MessageSeverity.WARNING,
-                                                "Cancel requested.");
-                                    },
-                                    (evt, inputData) -> {
-                                        chatService.sendMessage(player, IChatService.MessageSeverity.WARNING,
-                                                "Reset requested.");
-                                        inputData.setCurrentValue(null);
-                                    }
-                            )), 2, 0);
-                            pane.addItem(baseGuiControlsService.createBackButton(evt -> {
-                                player.closeInventory();
-                            }), 0, 5);
-
-                            gui.addPane(pane);
-                            gui.show(player);
                         })
                         .withSubcommand(new CommandAPICommand("load")
                                 .withArguments(new StringArgument("name")))
@@ -269,16 +195,8 @@ public class GameService implements IGameService, IService {
                             }
 
                             try {
-                                // Load the config
                                 final GameConfig gameConfig = configService.load(GameConfig.class, "games" + File.separator + configName + ".json");
-
-                                // Create the game
-                                final var game = createGame(
-                                        gameConfig.getWorld(),
-                                        gameConfig.getLobby(),
-                                        gameConfig.getGameSize(),
-                                        Set.of()
-                                );
+                                final var game = createGame(gameConfig);
 
                                 chatService.sendMessage(player, IChatService.MessageSeverity.SUCCESS,
                                         "Game created successfully! ID: <accent>" + game.getId());
@@ -289,9 +207,9 @@ public class GameService implements IGameService, IService {
                                         .title("Game Created")
                                         .subtitle("ID: " + game.getId())
                                         .scheme(Colors.GREEN)
-                                        .fadeIn(java.time.Duration.ofMillis(500))
-                                        .stay(java.time.Duration.ofSeconds(3))
-                                        .fadeOut(java.time.Duration.ofMillis(500))
+                                        .fadeIn(Duration.ofMillis(500))
+                                        .stay(Duration.ofSeconds(3))
+                                        .fadeOut(Duration.ofMillis(500))
                                 );
 
                             } catch (Exception e) {

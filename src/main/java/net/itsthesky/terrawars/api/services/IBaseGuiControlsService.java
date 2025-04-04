@@ -54,8 +54,6 @@ public interface IBaseGuiControlsService {
         private final @NotNull String name;
         private final @NotNull List<String> description;
         private final @NotNull BiConsumer<T, InputControlData<T>> onInput;
-        private final @NotNull BiConsumer<InventoryClickEvent, InputControlData<T>> onCancel;
-        private final @Nullable BiConsumer<InventoryClickEvent, InputControlData<T>> onReset;
     }
 
     @NotNull GuiItem createChatInputControl(@NotNull String instructions,
@@ -66,6 +64,9 @@ public interface IBaseGuiControlsService {
                                                     @NotNull InputControlData<String> inputData) {
         return createChatInputControl(instructions, s -> true, inputData);
     }
+
+    @NotNull GuiItem createNumericInputControl(@NotNull String instructions,
+                                                       @NotNull InputControlData<Integer> inputData);
 
     @NotNull GuiItem createLocationInputControl(@NotNull String instructions,
                                                 @NotNull InputControlData<Location> inputData);
