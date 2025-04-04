@@ -10,7 +10,6 @@ import net.itsthesky.terrawars.api.services.IChatService;
 import net.itsthesky.terrawars.core.impl.game.Game;
 import net.itsthesky.terrawars.util.BukkitUtils;
 import net.itsthesky.terrawars.util.Checks;
-import net.minecraft.network.protocol.game.ClientboundCooldownPacket;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -66,6 +65,12 @@ public class IglooAbility extends ActiveAbility {
 
         final var team = gamePlayer.getTeam();
         final var center = player.getLocation();
+        final var playerId = player.getUniqueId();
+
+        // Important: Check if player already has an igloo and clean it up first
+        if (playerIgloos.containsKey(playerId)) {
+            cleanupExistingIgloo(playerId);
+        }
 
         // Create the igloo structure
         final var iglooBlocks = createIgloo(center);
@@ -76,30 +81,59 @@ public class IglooAbility extends ActiveAbility {
         }
 
         // Play creation sound and visual effects
-        // playSoundEffects(center.getWorld(), center);
+        player.getWorld().playSound(center, Sound.BLOCK_GLASS_PLACE, 1.0f, 0.7f);
 
         // Expel enemies from the igloo
         expelEnemies(center, gamePlayer, team);
 
         final var regenTask = scheduleHealthRegeneration(center, gamePlayer, team);
-        final var removalTask = scheduleIglooRemoval(player.getUniqueId(), iglooBlocks, regenTask);
+        final var removalTask = scheduleIglooRemoval(playerId, iglooBlocks, regenTask);
 
         // Show success message
-        //showSuccessMessage(player);
         game.getChatService().sendMessage(player, IChatService.MessageSeverity.INFO,
                 "Igloo created! You will heal for <shade-emerald:500>2 ♥</shade-emerald> per second while inside.");
 
         // Store the igloo blocks for this player
-        playerIgloos.put(player.getUniqueId(),
-                new IglooData(iglooBlocks, regenTask, removalTask, game));
+        playerIgloos.put(playerId, new IglooData(iglooBlocks, regenTask, removalTask, game));
 
         return true;
+    }
+
+    /**
+     * Cleans up an existing igloo for a player before creating a new one.
+     * This prevents conflicts between removal tasks.
+     *
+     * @param playerId The UUID of the player
+     */
+    private void cleanupExistingIgloo(UUID playerId) {
+        final var existingIgloo = playerIgloos.get(playerId);
+        if (existingIgloo != null) {
+            // Cancel existing tasks
+            if (existingIgloo.regenTask != null) {
+                existingIgloo.regenTask.cancel();
+            }
+
+            if (existingIgloo.removeTask != null) {
+                existingIgloo.removeTask.cancel();
+            }
+
+            // Remove the blocks immediately (silently)
+            for (Location loc : existingIgloo.blocks) {
+                if (loc.getBlock().getType() == IGLOO_BLOCK) {
+                    loc.getBlock().setType(Material.AIR);
+                }
+            }
+
+            // Remove from tracked igloos
+            playerIgloos.remove(playerId);
+        }
     }
 
     /**
      * Expels enemy players and entities from the igloo area.
      *
      * @param center The center of the igloo
+     * @param gamePlayer The player who created the igloo
      * @param team The team that owns the igloo
      */
     private void expelEnemies(Location center, IGamePlayer gamePlayer, IGameTeam team) {
@@ -114,8 +148,10 @@ public class IglooAbility extends ActiveAbility {
         for (Entity entity : entities) {
             if (entity instanceof Player player) {
                 // Skip allies
-                if (gamePlayer != null && gamePlayer.getTeam() == team)
+                final var entityGamePlayer = gamePlayer.getGame().findGamePlayer(player);
+                if (entityGamePlayer != null && entityGamePlayer.getTeam() == team) {
                     continue;
+                }
             }
 
             if (entity instanceof LivingEntity) {
@@ -179,7 +215,7 @@ public class IglooAbility extends ActiveAbility {
 
                     if (block.getType() == Material.AIR) {
                         block.setType(IGLOO_BLOCK);
-                        placedBlocks.add(loc);
+                        placedBlocks.add(loc.clone()); // Clone to ensure independence
                     }
                 }
             }
@@ -197,7 +233,7 @@ public class IglooAbility extends ActiveAbility {
 
                             if (block.getType() == Material.AIR) {
                                 block.setType(IGLOO_BLOCK);
-                                placedBlocks.add(loc);
+                                placedBlocks.add(loc.clone()); // Clone to ensure independence
                             }
                         }
                     }
@@ -212,7 +248,7 @@ public class IglooAbility extends ActiveAbility {
 
                     if (block.getType() == Material.AIR) {
                         block.setType(IGLOO_BLOCK);
-                        placedBlocks.add(loc);
+                        placedBlocks.add(loc.clone()); // Clone to ensure independence
                     }
                 }
             }
@@ -252,7 +288,7 @@ public class IglooAbility extends ActiveAbility {
                     totalBlocks++;
 
                     final var block = world.getBlockAt(x, y, z);
-                    if (block.getType().isSolid()) {
+                    if (block.getType().isSolid() && block.getType() != IGLOO_BLOCK) {
                         solidBlocks++;
                     }
                 }
@@ -280,19 +316,23 @@ public class IglooAbility extends ActiveAbility {
                 // Stop regeneration
                 regenTask.cancel();
 
-                // Remove the igloo blocks
-                for (Location loc : iglooBlocks) {
-                    if (loc.getBlock().getType() == IGLOO_BLOCK) {
-                        // Play break effect
-                        loc.getWorld().playSound(loc, Sound.BLOCK_SNOW_BREAK, 0.3f, 1.0f);
+                // Check if this igloo data is still valid for this player
+                final var currentIgloo = playerIgloos.get(playerUuid);
+                if (currentIgloo != null && currentIgloo.blocks() == iglooBlocks) {
+                    // Remove the igloo blocks
+                    for (Location loc : iglooBlocks) {
+                        if (loc.getBlock().getType() == IGLOO_BLOCK) {
+                            // Play break effect
+                            loc.getWorld().playSound(loc, Sound.BLOCK_SNOW_BREAK, 0.3f, 1.0f);
 
-                        // Remove the block
-                        loc.getBlock().setType(Material.AIR);
+                            // Remove the block
+                            loc.getBlock().setType(Material.AIR);
+                        }
                     }
-                }
 
-                // Remove from tracked igloos
-                playerIgloos.remove(playerUuid);
+                    // Remove from tracked igloos
+                    playerIgloos.remove(playerUuid);
+                }
             }
         }, 20, 20); // Run every second
     }
@@ -301,6 +341,7 @@ public class IglooAbility extends ActiveAbility {
      * Schedules a task to regenerate health for allies inside the igloo.
      *
      * @param center The center of the igloo
+     * @param gamePlayer The player who created the igloo
      * @param team The team that owns the igloo
      * @return The BukkitTask handling regeneration
      */
@@ -314,7 +355,8 @@ public class IglooAbility extends ActiveAbility {
             for (Entity entity : entities) {
                 if (entity instanceof Player player) {
                     // Only heal allies
-                    if (gamePlayer != null && gamePlayer.getTeam() == team) {
+                    final var entityGamePlayer = gamePlayer.getGame().findGamePlayer(player);
+                    if (entityGamePlayer != null && entityGamePlayer.getTeam() == team) {
                         // Apply regeneration
                         final var maxHealth = player.getMaxHealth();
                         final var newHealth = Math.min(player.getHealth() + REGEN_AMOUNT, maxHealth);

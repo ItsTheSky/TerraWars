@@ -1,11 +1,14 @@
 package net.itsthesky.terrawars.api.services;
 
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
+import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
+import com.github.stefvanschie.inventoryframework.pane.PatternPane;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.jetbrains.annotations.NotNull;
@@ -34,6 +37,8 @@ public interface IBaseGuiControlsService {
     @NotNull GuiItem createCloseButton(@NotNull Consumer<InventoryClickEvent> onClick);
 
     @NotNull GuiItem createConfirmButton(@NotNull Consumer<InventoryClickEvent> onClick);
+
+    @NotNull GuiItem createResetButton(@NotNull Consumer<InventoryClickEvent> onClick);
 
     //endregion
 
@@ -74,6 +79,16 @@ public interface IBaseGuiControlsService {
         return createComboBoxInputControl(options, inputData, Objects::toString);
     }
 
+    @NotNull GuiItem createWorldSelectorInputControl(@Nullable Predicate<World> filter,
+                                                     @NotNull InputControlData<World> inputData);
+
+    @NotNull GuiItem createSubMenuInputControl(@NotNull String name,
+                                               @NotNull List<String> description,
+                                               @NotNull Material material,
+                                               @NotNull Consumer<InventoryClickEvent> onClick);
+
     //endregion
+
+    @NotNull PatternPane createBaseBorderPane(int height);
 
 }

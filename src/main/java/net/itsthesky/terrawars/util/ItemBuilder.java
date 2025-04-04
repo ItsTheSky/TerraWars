@@ -33,6 +33,13 @@ public class ItemBuilder {
 
     @Getter
     private final ItemStack item;
+
+    public static ItemStack fill() {
+        return new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE)
+                .name(" ")
+                .flags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_UNBREAKABLE)
+                .item;
+    }
     
     public ItemBuilder(Material material) {
         IServiceProvider.instance().inject(this);

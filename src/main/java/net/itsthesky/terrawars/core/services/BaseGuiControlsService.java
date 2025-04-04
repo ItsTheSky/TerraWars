@@ -1,7 +1,14 @@
 package net.itsthesky.terrawars.core.services;
 
+import com.github.stefvanschie.inventoryframework.adventuresupport.ComponentHolder;
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
+import com.github.stefvanschie.inventoryframework.pane.OutlinePane;
+import com.github.stefvanschie.inventoryframework.pane.Pane;
+import com.github.stefvanschie.inventoryframework.pane.PatternPane;
+import com.github.stefvanschie.inventoryframework.pane.StaticPane;
+import com.github.stefvanschie.inventoryframework.pane.util.Pattern;
+import com.github.stefvanschie.inventoryframework.pane.util.Slot;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.itsthesky.terrawars.TerraWars;
 import net.itsthesky.terrawars.api.services.IBaseGuiControlsService;
@@ -10,8 +17,10 @@ import net.itsthesky.terrawars.api.services.base.Service;
 import net.itsthesky.terrawars.util.BukkitUtils;
 import net.itsthesky.terrawars.util.Colors;
 import net.itsthesky.terrawars.util.ItemBuilder;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -27,6 +36,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -80,6 +90,14 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
                 .getItem(), onClick);
     }
 
+    @Override
+    public @NotNull GuiItem createResetButton(@NotNull Consumer<InventoryClickEvent> onClick) {
+        return new GuiItem(new ItemBuilder(Material.RED_WOOL)
+                .name("<accent><b>✖</b> <base>Reset", Colors.ROSE)
+                .lore(Colors.ROSE, "<text>Reset the value to default.")
+                .getItem(), onClick);
+    }
+
     private final Map<UUID, Consumer<AsyncChatEvent>> waitingForChat = new HashMap<>();
 
     private <T> String format(@Nullable T value, @Nullable Function<T, String> displayFunction) {
@@ -108,6 +126,7 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
 
         lore.add("");
         lore.add("[green]<accent><b>✏</b> <base>Click to change this value!");
+        lore.add("<shade-slate:600><i>You can <b>drop</b> the item to reset the value!</i>");
         return lore;
     }
 
@@ -135,6 +154,7 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
 
         lore.add("");
         lore.add("[green]<accent><b>✏</b> <base>Click to change this value!");
+        lore.add("<shade-slate:600><i>You can <b>drop</b> the item to reset the value!</i>");
         return lore;
     }
 
@@ -154,6 +174,27 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
 
         lore.add("");
         lore.add("[green]<accent><b>✏</b> <base>Click to change this value!");
+        lore.add("<shade-slate:600><i>You can <b>drop</b> the item to reset the value!</i>");
+        return lore;
+    }
+
+    private List<String> buildWorldSelectorLore(InputControlData<World> inputData) {
+        final var lore = new ArrayList<String>();
+        lore.add("");
+        for (String line : inputData.getDescription())
+            lore.add("<i><text>" + line);
+        lore.add("");
+
+        final var currentValue = inputData.getCurrentValue() != null ? inputData.getCurrentValue() : inputData.getDefaultValue();
+        if (currentValue != null) {
+            lore.add("[emerald]<accent>• <text>Current world: <base>" + currentValue.getName());
+        } else {
+            lore.add("[red]<accent>• <text>Current world is not set!");
+        }
+
+        lore.add("");
+        lore.add("[green]<accent><b>✏</b> <base>Click to change this value!");
+        lore.add("<shade-slate:600><i>You can <b>drop</b> the item to reset the value!</i>");
         return lore;
     }
 
@@ -308,6 +349,108 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
         return new GuiItem(item.getItem(), consumer);
     }
 
+    @Override
+    public @NotNull GuiItem createWorldSelectorInputControl(@Nullable Predicate<World> filter,
+                                                            @NotNull InputControlData<World> inputData) {
+        final var mainItem = new ItemBuilder(inputData.getMaterial())
+                .name("<accent><b>✏</b> <base>" + inputData.getName(), Colors.YELLOW)
+                .lore(Colors.YELLOW, buildWorldSelectorLore(inputData).toArray(new String[0]));
+
+        final Consumer<InventoryClickEvent> mainConsumer = event -> {
+            event.setCancelled(true);
+            final @NotNull var gui = (ChestGui) Objects.requireNonNull(event.getInventory().getHolder());
+
+            if (event.getClick().equals(ClickType.DROP)) {
+                if (inputData.getOnReset() != null) {
+                    inputData.getOnReset().accept(event, inputData);
+                    mainItem.lore(Colors.YELLOW, buildWorldSelectorLore(inputData).toArray(new String[0]));
+                    gui.update();
+                }
+                return;
+            }
+
+            final int rows = Math.max(3, Bukkit.getWorlds().size() / 9 + 2);
+            final var chestGui = new ChestGui(rows, ComponentHolder.of(chatService.format(
+                    "<accent>Select World", Colors.GREEN
+            )));
+
+            final var worldsListPane = new StaticPane(1, 1, 7, rows - 2);
+            final var controlsPane = new StaticPane(0, rows - 1, 9, 1);
+            final var decoPane = createBaseBorderPane(rows);
+
+            final var worlds = Bukkit.getWorlds();
+            int index = -1;
+            for (final var world : worlds) {
+                if (filter != null && !filter.test(world))
+                    continue;
+
+                index++;
+                final var mat = switch (world.getEnvironment()) {
+                    case NETHER -> Material.NETHERRACK;
+                    case THE_END -> Material.END_STONE;
+                    default -> Material.GRASS_BLOCK;
+                };
+
+                final var item = new ItemBuilder(mat)
+                        .name("<accent><b>✏</b> <base>" + world.getName(), Colors.YELLOW)
+                        .lore(Colors.YELLOW, "<text>Click to select this world.")
+                        .getItem();
+
+                final Consumer<InventoryClickEvent> consumer = evt -> {
+                    event.setCancelled(true);
+                    inputData.getOnInput().accept(world, inputData);
+                    mainItem.lore(Colors.YELLOW, buildWorldSelectorLore(inputData).toArray(new String[0]));
+                    gui.update();
+                    gui.show(event.getWhoClicked());
+                };
+
+                worldsListPane.addItem(new GuiItem(item, consumer), Slot.fromIndex(index));
+            }
+
+            // controls
+            controlsPane.addItem(createBackButton(evt -> {
+                evt.setCancelled(true);
+                gui.show(event.getWhoClicked());
+            }), Slot.fromIndex(0));
+            controlsPane.addItem(createResetButton(evt -> {
+                evt.setCancelled(true);
+                inputData.getOnReset().accept(evt, inputData);
+                mainItem.lore(Colors.YELLOW, buildWorldSelectorLore(inputData).toArray(new String[0]));
+                gui.update();
+            }), Slot.fromIndex(4));
+
+            chestGui.addPane(decoPane);
+            chestGui.addPane(worldsListPane);
+            chestGui.addPane(controlsPane);
+
+            chestGui.show(event.getWhoClicked());
+        };
+
+        return new GuiItem(mainItem.getItem(), mainConsumer);
+    }
+
+    @Override
+    public @NotNull GuiItem createSubMenuInputControl(@NotNull String name, @NotNull List<String> description, @NotNull Material material, @NotNull Consumer<InventoryClickEvent> onClick) {
+        final var lore = new ArrayList<String>();
+        lore.add("");
+        for (String line : description)
+            lore.add("<i><text>" + line);
+        lore.add("");
+        lore.add("[emerald]<accent>• <text>Click to open the sub-menu.");
+
+        final var item = new ItemBuilder(material)
+                .name("<accent><b>✏</b> <base>" + name, Colors.BLUE)
+                .lore(Colors.BLUE, lore)
+                .getItem();
+
+        final Consumer<InventoryClickEvent> consumer = event -> {
+            event.setCancelled(true);
+            onClick.accept(event);
+        };
+
+        return new GuiItem(item, consumer);
+    }
+
     public class ControlsListener implements Listener {
 
         @EventHandler
@@ -347,5 +490,18 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
             consumer.accept(event);
         }
 
+    }
+
+    @Override
+    public @NotNull PatternPane createBaseBorderPane(int height) {
+        final List<String> lines = new ArrayList<>();
+        lines.add("111111111");
+        for (int i = 0; i < height - 2; i++)
+            lines.add("100000001");
+        lines.add("111111111");
+        final var pattern = new Pattern(lines.toArray(new String[0]));
+        final var pane = new PatternPane(0, 0, 9, height, Pane.Priority.LOWEST, pattern);
+        pane.bindItem('1', new GuiItem(ItemBuilder.fill(), e -> e.setCancelled(true)));
+        return pane;
     }
 }

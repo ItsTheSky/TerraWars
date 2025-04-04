@@ -19,6 +19,7 @@ public class GameConfig {
     private World world;
     private Location lobby;
     private List<GameTeamConfig> teams = new ArrayList<>();
+
     @SerializedName("game_size")
     private IGame.GameSize gameSize = IGame.GameSize.SOLO;
 

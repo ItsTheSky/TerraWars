@@ -273,7 +273,7 @@ public class ServiceProvider implements IServiceProvider {
                 field.set(serviceInstance, dependency);
                 field.setAccessible(wasAccessible);
 
-                plugin.getLogger().info("Injected " + dependencyType.getName() + " into " + serviceClass.getName());
+                // plugin.getLogger().info("Injected " + dependencyType.getName() + " into " + serviceClass.getName());
 
             } catch (Exception e) {
                 plugin.getLogger().severe("Failed to inject dependency of type " + dependencyType.getName()

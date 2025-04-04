@@ -46,6 +46,8 @@ public class GameService implements IGameService, IService {
     private IConfigService configService;
     @Inject
     private IBaseGuiControlsService baseGuiControlsService;
+    @Inject
+    private IGameEditorGuiProvider gameEditorGuiProvider;
 
     private final Map<UUID, IGame> games = new HashMap<>();
 
@@ -183,6 +185,11 @@ public class GameService implements IGameService, IService {
 
                             // Create new GameConfig with default values
                             final GameConfig gameConfig = new GameConfig();
+
+                            final var newGui = gameEditorGuiProvider.createGameEditorGui(gameConfig);
+                            newGui.show(player);
+                            if (true)
+                                return;
 
                             final var gui = new ChestGui(6, "Game Configuration");
                             final var pane = new StaticPane(0, 0, 9, 6);
