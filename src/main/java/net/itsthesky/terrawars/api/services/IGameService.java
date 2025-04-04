@@ -27,4 +27,6 @@ public interface IGameService {
                               @NotNull Location lobby,
                               @NotNull IGame.GameSize size,
                               @NotNull Set<IBiome> availableBiomes);
+
+    @Nullable IGame getPlayerGame(@NotNull UUID playerId);
 }

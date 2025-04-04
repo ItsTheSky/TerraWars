@@ -74,6 +74,21 @@ public interface IGame {
 
     @NotNull Set<IGameTeam> getTeams() throws IllegalStateException;
 
+    default @Nullable IGamePlayer findGamePlayer(@NotNull UUID playerId) {
+        for (IGameTeam team : getTeams()) {
+            for (IGamePlayer gamePlayer : team.getPlayers()) {
+                if (gamePlayer.getPlayer().getUniqueId().equals(playerId)) {
+                    return gamePlayer;
+                }
+            }
+        }
+        return null;
+    }
+
+    default @Nullable IGamePlayer findGamePlayer(@NotNull OfflinePlayer player) {
+        return findGamePlayer(player.getUniqueId());
+    }
+
     @NotNull Set<IGamePlayer> getWaitingPlayers() throws IllegalStateException;
 
     int getMaxPlayers();

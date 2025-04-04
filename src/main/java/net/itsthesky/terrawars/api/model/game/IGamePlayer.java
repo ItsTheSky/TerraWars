@@ -1,5 +1,6 @@
 package net.itsthesky.terrawars.api.model.game;
 
+import net.itsthesky.terrawars.api.model.ability.IAbility;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -61,7 +62,7 @@ public interface IGamePlayer extends IGameHolder {
      * @see IGamePlayer#getGame()
      * @see GamePlayerState#TEAM
      */
-    @NotNull IGameTeam getTeam() throws IllegalStateException;
+    @Nullable IGameTeam getTeam() throws IllegalStateException;
 
     void setTeam(@Nullable IGameTeam team) throws IllegalStateException;
 
@@ -83,5 +84,39 @@ public interface IGamePlayer extends IGameHolder {
      */
     default boolean isInTeam() {
         return getState() == GamePlayerState.TEAM;
+    }
+
+    /**
+     * Get the currently selected ability of this player.
+     * This method should always return an ability that is
+     * from {@link IGameTeam#getBiome() its biome!}
+     * <br>
+     * May return null, in case it does not have any selected yet.
+     * @return the currently selected ability of this player
+     * @see IGamePlayer#setSelectedAbility(IAbility)
+     */
+    @Nullable IAbility getSelectedAbility();
+
+    /**
+     * Set the currently selected ability of this player.
+     * This method should always set an ability that is
+     * from {@link IGameTeam#getBiome() its biome!}
+     * @param ability the new selected ability of this player
+     * @see IGamePlayer#getSelectedAbility()
+     */
+    void setSelectedAbility(@Nullable IAbility ability);
+
+    /**
+     * Set up the hotbar for that player, so the last item
+     * is the ability item, selected by the player.
+     */
+    void setupHotbar(boolean clear);
+
+    /**
+     * Refresh the hotbar of this player. This will basically
+     * refresh teh ability's slot in the hotbar.
+     */
+    default void refreshHotbar() {
+        setupHotbar(false);
     }
 }

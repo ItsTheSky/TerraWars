@@ -235,7 +235,24 @@ public interface IChatService {
      */
     @NotNull Component format(@NotNull String message, @NotNull TagResolver... tagResolvers);
 
+    /**
+     * Construct a component from a message. The given
+     * message may contain MiniMessage tags.
+     * <br>
+     * You can specify here a {@link Colors#SLATE color schemes}.
+     * @param message the message to format
+     * @param scheme the color scheme to use
+     * @param tagResolvers the tag resolvers to use
+     * @return the formatted message
+     */
     @NotNull Component format(@NotNull String message, @NotNull List<TextColor> scheme, @NotNull TagResolver... tagResolvers);
+
+    /**
+     * Convert a rich {@link Component} to a simple string.
+     * @param message the message to unformat
+     * @return the unformatted message
+     */
+    @NotNull String unformat(@NotNull Component message);
 
     /**
      * Send a title & subtitle using a pre-built title builder.

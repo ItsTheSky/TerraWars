@@ -361,4 +361,42 @@ public class Colors {
     public static final List<TextColor> PINK = List.of(PINK_50, PINK_100, PINK_200, PINK_300, PINK_400, PINK_500, PINK_600, PINK_700, PINK_800, PINK_900, PINK_950);
 
     public static final List<TextColor> ROSE = List.of(ROSE_50, ROSE_100, ROSE_200, ROSE_300, ROSE_400, ROSE_500, ROSE_600, ROSE_700, ROSE_800, ROSE_900, ROSE_950);
+
+    public static List<TextColor> getSchemeByName(String colorName) {
+        return switch (colorName.toLowerCase()) {
+            case "slate" -> SLATE;
+            case "gray" -> GRAY;
+            case "zinc" -> ZINC;
+            case "neutral" -> NEUTRAL;
+            case "stone" -> STONE;
+            case "red" -> RED;
+            case "orange" -> ORANGE;
+            case "amber" -> AMBER;
+            case "yellow" -> YELLOW;
+            case "lime" -> LIME;
+            case "green" -> GREEN;
+            case "emerald" -> EMERALD;
+            case "teal" -> TEAL;
+            case "cyan" -> CYAN;
+            case "sky" -> SKY;
+            case "blue" -> BLUE;
+            case "indigo" -> INDIGO;
+            case "violet" -> VIOLET;
+            case "purple" -> PURPLE;
+            case "fuchsia" -> FUCHSIA;
+            case "pink" -> PINK;
+            case "rose" -> ROSE;
+            default -> throw new IllegalArgumentException("Unknown color name: " + colorName);
+        };
+    }
+
+    public static List<String> getAvailableSchemesByName() {
+        return List.of(
+                "slate", "gray", "zinc", "neutral", "stone",
+                "red", "orange", "amber", "yellow", "lime",
+                "green", "emerald", "teal", "cyan", "sky",
+                "blue", "indigo", "violet", "purple", "fuchsia",
+                "pink", "rose"
+        );
+    }
 }

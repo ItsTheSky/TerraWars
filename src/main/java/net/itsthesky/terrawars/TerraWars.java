@@ -1,6 +1,7 @@
 package net.itsthesky.terrawars;
 
 import net.itsthesky.terrawars.api.services.base.IServiceProvider;
+import net.itsthesky.terrawars.util.ItemBuilder;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class TerraWars extends JavaPlugin {
@@ -23,6 +24,8 @@ public final class TerraWars extends JavaPlugin {
             return;
         }
 
+        getServer().getPluginManager().registerEvents(new ItemBuilder.ItemListener(), this);
+
         getLogger().info("TerraWars is ready to go! Registered " + serviceProvider.getRegisteredServices().size() + " services.");
     }
 
@@ -36,5 +39,9 @@ public final class TerraWars extends JavaPlugin {
 
     public static TerraWars instance() {
         return plugin;
+    }
+
+    public IServiceProvider serviceProvider() {
+        return serviceProvider;
     }
 }

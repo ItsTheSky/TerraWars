@@ -1,7 +1,10 @@
 package net.itsthesky.terrawars.core.impl.game;
 
+import io.papermc.paper.event.player.AsyncChatEvent;
 import lombok.Getter;
 import net.itsthesky.terrawars.TerraWars;
+import net.itsthesky.terrawars.api.model.ability.AbilityType;
+import net.itsthesky.terrawars.api.model.ability.ActiveAbility;
 import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.model.game.IGamePlayer;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
@@ -12,13 +15,18 @@ import net.itsthesky.terrawars.core.events.game.GameStateChangeEvent;
 import net.itsthesky.terrawars.util.BukkitUtils;
 import net.itsthesky.terrawars.util.Checks;
 import net.itsthesky.terrawars.util.Colors;
+import net.itsthesky.terrawars.util.Keys;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.format.TextColor;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.World;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +41,7 @@ public class Game implements IGame {
     @Inject private IChatService chatService;
     private final IServiceProvider serviceProvider;
 
-    private final Set<GameTeam> teams;
+    private final List<GameTeam> teams;
     private final Set<GamePlayer> waitingPlayers;
     private final UUID id;
     private final World world;
@@ -50,9 +58,11 @@ public class Game implements IGame {
         serviceProvider.inject(this);
         this.serviceProvider = serviceProvider;
 
+        BukkitUtils.registerListener(new GameListener());
+
         this.id = UUID.randomUUID();
         this.state = GameState.WAITING;
-        this.teams = new HashSet<>();
+        this.teams = new ArrayList<>();
         this.waitingPlayers = new HashSet<>();
 
         this.world = world;
@@ -223,9 +233,10 @@ public class Game implements IGame {
         final var countdown = new AtomicInteger(10);
         startCountdownTask = Bukkit.getScheduler().runTaskTimer(TerraWars.instance(), () -> {
             if (countdown.get() <= 0) {
-                broadcastMessage(IChatService.MessageSeverity.SUCCESS, "Game started! ☻");
+                broadcastMessage(IChatService.MessageSeverity.SUCCESS, "Game started!");
                 startCountdownTask.cancel();
                 startCountdownTask = null;
+                setupStartedGame();
                 return;
             }
 
@@ -239,11 +250,51 @@ public class Game implements IGame {
             if (count <= 5) {
                 broadcastTitle("Game starting in <accent>" + count + " second" + (count > 1 ? "s" : ""),
                         "<base>Get ready!", Colors.AMBER,
-                        Duration.ofSeconds(0), Duration.ofSeconds(1), Duration.ofSeconds(0));
+                        Duration.ofSeconds(0), Duration.ofMillis(1100), Duration.ofSeconds(0));
             }
 
             broadcastMessage(severity, "Game starting in <accent>" + count + " second" + (count > 1 ? "s" : "") + "<text> ...");
         }, 0, 20);
+    }
+
+    public void setupStartedGame() {
+        // 1. give everyone a team
+        // 2. teleport everyone to their team spawn
+        // 3. set the game state to RUNNING
+
+        this.teams.clear();
+        for (int i = 0; i < 4; i++) {
+            final var team = new GameTeam(this, null, null);
+            teams.add(team);
+        }
+        final var players = new ArrayList<>(waitingPlayers);
+        Collections.shuffle(players);
+
+        final var remainingPlayers = new ArrayList<>(players);
+
+        while (!remainingPlayers.isEmpty()) {
+            for (GameTeam team : teams) {
+                if (remainingPlayers.isEmpty())
+                    break;
+                final var player = remainingPlayers.removeFirst();
+                if (!team.tryAddPlayer(player))
+                    remainingPlayers.add(player);
+                else {
+                    System.out.println("Added player " + player.getPlayer().getName() + " to team " + team.getBiome());
+                }
+            }
+        }
+
+        for (GameTeam team : teams) {
+            for (IGamePlayer player : team.getPlayers()) {
+                if (player.isOnline()) {
+                    // player.getPlayer().teleport(team.getSpawnLocation());
+                    player.setupHotbar(true);
+                }
+            }
+        }
+
+        setState(GameState.RUNNING);
     }
 
     public void cancelCountdownIfNeeded() {
@@ -252,4 +303,71 @@ public class Game implements IGame {
             startCountdownTask = null;
         }
     }
+
+    //region Game Listener!
+
+    public class GameListener implements Listener {
+
+        @EventHandler
+        public void onAsyncChat(AsyncChatEvent event) {
+            if (state == GameState.WAITING) {
+                event.message(chatService.format("<accent><player><base> <b>→</b> <text><message>",
+                        Colors.SLATE, TagResolver.resolver(
+                                Placeholder.component("player", event.getPlayer().displayName()),
+                                Placeholder.component("message", event.message()))
+                        ));
+                return;
+            }
+
+            final var player = event.getPlayer();
+            if (player == null)
+                return;
+
+            final var gamePlayer = findGamePlayer(player);
+            if (gamePlayer == null)
+                return;
+
+            final var team = gamePlayer.getTeam();
+            if (team == null)
+                return;
+
+            event.message(chatService.format("<accent><player><base> [<team>]<base> <b>→</b> <text><message>",
+                    team.getColorScheme(), TagResolver.resolver(
+                            Placeholder.component("player", player.displayName()),
+                            Placeholder.component("message", event.message())),
+                            Placeholder.parsed("team", team.getBiome() == null ? "none yet" : team.getBiome().toString())
+                    ));
+        }
+
+        // Handler for abilities
+        @EventHandler(priority = EventPriority.HIGH)
+        public void onPlayerInteract(@NotNull PlayerInteractEvent event) {
+            final var player = event.getPlayer();
+            if (state != GameState.RUNNING)
+                return;
+            final var gamePlayer = findGamePlayer(player);
+            if (gamePlayer == null)
+                return;
+
+            final var heldItem = event.getItem();
+            if (gamePlayer.getSelectedAbility() == null || heldItem == null || heldItem.getType() == Material.AIR)
+                return;
+
+            final var abilityKey = heldItem.getPersistentDataContainer().get(Keys.ABILITY_KEY, PersistentDataType.STRING);
+            if (abilityKey == null || !abilityKey.equals(gamePlayer.getSelectedAbility().getId()))
+                return;
+
+            final var ability = gamePlayer.getSelectedAbility();
+            if (ability.getType() == AbilityType.ACTIVE && ability instanceof final ActiveAbility activeAbility) {
+                if (activeAbility.use(gamePlayer, Game.this)) {
+                    gamePlayer.setupHotbar(false);
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
+
+    }
+
+    //endregion
 }

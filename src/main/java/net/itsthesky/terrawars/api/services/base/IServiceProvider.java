@@ -1,5 +1,6 @@
 package net.itsthesky.terrawars.api.services.base;
 
+import net.itsthesky.terrawars.TerraWars;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -10,6 +11,14 @@ import java.util.Set;
  * Provider for all services.
  */
 public interface IServiceProvider {
+
+    static IServiceProvider instance() {
+        final var provider = TerraWars.instance().serviceProvider();
+        if (provider == null)
+            throw new IllegalStateException("Service provider is not initialized");
+
+        return provider;
+    }
 
     /**
      * Registers a service implementation with its corresponding interface class.
