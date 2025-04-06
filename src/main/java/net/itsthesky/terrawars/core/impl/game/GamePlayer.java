@@ -6,9 +6,11 @@ import net.itsthesky.terrawars.api.model.ability.IAbility;
 import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.model.game.IGamePlayer;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
+import net.itsthesky.terrawars.api.services.IChatService;
 import net.itsthesky.terrawars.util.Checks;
 import net.itsthesky.terrawars.util.Colors;
 import net.itsthesky.terrawars.util.ItemBuilder;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.EquipmentSlot;
@@ -22,14 +24,14 @@ import java.util.Objects;
 public class GamePlayer implements IGamePlayer {
 
     private final OfflinePlayer offlinePlayer;
-    private final IGame game;
+    private final Game game;
 
     private GamePlayerState state;
     private @Nullable IGameTeam team;
 
     private @Nullable IAbility selectedAbility;
 
-    public GamePlayer(OfflinePlayer player, IGame game) {
+    public GamePlayer(OfflinePlayer player, Game game) {
         this.offlinePlayer = player;
         this.game = game;
 
@@ -90,6 +92,31 @@ public class GamePlayer implements IGamePlayer {
             player.getInventory().setItem(ABILITY_SLOT,
                     selectedAbility.buildHotBarItem(this));
         }
+    }
+
+    @Override
+    public void setup() {
+        if (!isOnline())
+            return;
+
+        final var player = Objects.requireNonNull(this.offlinePlayer.getPlayer());
+        player.getInventory().clear();
+        player.setGameMode(GameMode.SURVIVAL);
+        player.setLevel(0);
+        player.setExp(0);
+
+        final var availableAbilities = this.team.getBiome().getAvailableAbilities();
+        if (availableAbilities.isEmpty()) {
+            game.getChatService().sendMessage(player, IChatService.MessageSeverity.WARNING, "No abilities available for this team.");
+        } else {
+            final var firstAbility = availableAbilities.get(0);
+            setSelectedAbility(firstAbility);
+            game.getChatService().sendMessage(player, IChatService.MessageSeverity.SUCCESS,
+                    "Selected the <accent>" + firstAbility.getDisplayName() + "<text> ability!");
+        }
+
+        setupHotbar(true);
+        refreshArmor();
     }
 
     @Override

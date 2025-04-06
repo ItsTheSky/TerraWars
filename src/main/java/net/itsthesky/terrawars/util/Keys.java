@@ -8,7 +8,7 @@ import org.bukkit.NamespacedKey;
  */
 public final class Keys {
 
-    private static final String NAMESPACE = "terrawars";
+    public static final String NAMESPACE = "terrawars";
 
     //region Item-specific keys
 
@@ -32,6 +32,14 @@ public final class Keys {
      * Will holds a {@link UUIDTagType uuid} value, representing the team's UUID.
      */
     public static final NamespacedKey NEXUS_TEAM_KEY = new NamespacedKey(NAMESPACE, "nexus_team");
+
+    /**
+     * Key used to define a block as a placed block by a player.
+     * This mean this block may be destroyed by others, and removed once the game ends.
+     * <br>
+     * Will holds a {@link UUIDTagType UUID} value, representing the player's UUID.
+     */
+    public static final NamespacedKey GAME_PLACED_BLOCK_KEY = new NamespacedKey(NAMESPACE, "game_placed_block");
 
     //endregion
 }

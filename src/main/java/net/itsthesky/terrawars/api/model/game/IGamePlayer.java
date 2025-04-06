@@ -112,6 +112,12 @@ public interface IGamePlayer extends IGameHolder {
     void refreshArmor();
 
     /**
+     * Set up the player. This should be called at the start of the game, right
+     * after teleporting the player to its base.
+     */
+    void setup();
+
+    /**
      * Set up the hotbar for that player, so the last item
      * is the ability item, selected by the player.
      */

@@ -54,7 +54,7 @@ public class GameTeam implements IGameTeam {
 
     @Override
     public @NotNull List<TextColor> getColorScheme() {
-        return Colors.AMBER;
+        return getBiome().getScheme();
     }
 
     @Override

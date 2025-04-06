@@ -5,9 +5,15 @@ import net.itsthesky.terrawars.core.impl.game.Game;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
+import org.bukkit.NamespacedKey;
+import org.bukkit.block.Block;
 import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 
@@ -74,5 +80,29 @@ public final class BukkitUtils {
             throw new IllegalArgumentException("Listener cannot be null");
 
         Bukkit.getPluginManager().registerEvents(listener, TerraWars.instance());
+    }
+
+    public static @Nullable PersistentDataContainer getBlockPdc(@NotNull Block block) {
+        final var chunk = block.getChunk();
+        final var key = new NamespacedKey(Keys.NAMESPACE, "block_pdc_" + block.getX() + "_" + block.getY() + "_" + block.getZ());
+        return chunk.getPersistentDataContainer().get(key, PersistentDataType.TAG_CONTAINER);
+    }
+
+    public static void setBlockPdc(@NotNull Block block, @NotNull PersistentDataContainer pdc) {
+        final var chunk = block.getChunk();
+        final var key = new NamespacedKey(Keys.NAMESPACE, "block_pdc_" + block.getX() + "_" + block.getY() + "_" + block.getZ());
+        chunk.getPersistentDataContainer().set(key, PersistentDataType.TAG_CONTAINER, pdc);
+    }
+
+    public static void editBlockPdc(@NotNull Block block,
+                                    @NotNull Consumer<PersistentDataContainer> consumer) {
+        final var chunk = block.getChunk();
+        final var key = new NamespacedKey(Keys.NAMESPACE, "block_pdc_" + block.getX() + "_" + block.getY() + "_" + block.getZ());
+        var pdc = chunk.getPersistentDataContainer().get(key, PersistentDataType.TAG_CONTAINER);
+        if (pdc == null)
+            pdc = chunk.getPersistentDataContainer().getAdapterContext().newPersistentDataContainer();
+
+        consumer.accept(pdc);
+        chunk.getPersistentDataContainer().set(key, PersistentDataType.TAG_CONTAINER, pdc);
     }
 }

@@ -16,6 +16,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
@@ -23,6 +24,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class GameNexus implements IGameNexus {
+
+    private static final int NEXUS_PROTECTION_RANGE = 3; // in blocks
 
     private final NexusStats stats;
     private final Location location;
@@ -219,6 +222,28 @@ public class GameNexus implements IGameNexus {
                     getStats().setHealth(newHealth);
                     GameNexus.this.crystal.updateTextDisplay();
                 }
+            }
+        }
+
+        @EventHandler
+        public void onBlockPlace(@NotNull BlockPlaceEvent event) {
+            final var block = event.getBlock();
+            if (block.getLocation().distance(location) > NEXUS_PROTECTION_RANGE)
+                return;
+
+            final var player = event.getPlayer();
+            final var gamePlayer = getGame().findGamePlayer(player);
+            if (gamePlayer == null)
+                return;
+
+            if (gamePlayer.getTeam().getId().equals(team.getId())) {
+                event.setCancelled(true);
+                getGame().getChatService().sendMessage(player, IChatService.MessageSeverity.ERROR,
+                        "You cannot build near your <accent>own nexus<text>!");
+            } else {
+                event.setCancelled(true);
+                getGame().getChatService().sendMessage(player, IChatService.MessageSeverity.ERROR,
+                        "You cannot build near the <accent>" + getTeam() + "<text> nexus!");
             }
         }
 

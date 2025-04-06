@@ -23,10 +23,14 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
@@ -44,6 +48,7 @@ public class Game implements IGame {
     @Inject private IBiomeService biomeService;
     private final IServiceProvider serviceProvider;
 
+    private final Map<Location, Block> placedBlocks;
     private final GameConfig config;
     private final List<GameTeam> teams;
     private final Set<GamePlayer> waitingPlayers;
@@ -65,6 +70,7 @@ public class Game implements IGame {
         this.state = GameState.WAITING;
         this.teams = new ArrayList<>();
         this.waitingPlayers = new HashSet<>();
+        this.placedBlocks = new HashMap<>();
 
         this.maxPlayers = this.config.getGameSize().getPlayerPerTeam() * 4;
     }
@@ -135,7 +141,9 @@ public class Game implements IGame {
 
         final var gamePlayer = new GamePlayer(player, this);
         waitingPlayers.add(gamePlayer);
+
         player.teleport(getLobbyLocation());
+        player.getInventory().clear();
 
         broadcastMessage(IChatService.MessageSeverity.INFO,
                 "<base>" + player.getName() + "<text> joined the game. <accent>[<text>" + waitingPlayers.size() + "<accent>/<text>" + maxPlayers + "<accent>]");
@@ -161,9 +169,18 @@ public class Game implements IGame {
 
     @Override
     public void cleanupGame() {
-        for (GameTeam team : teams) {
+        for (GameTeam team : teams)
             team.cleanup();
+        teams.clear();
+        waitingPlayers.clear();
+
+        for (Block block : placedBlocks.values()) {
+            if (block.getLocation().getWorld() != getWorld())
+                continue;
+
+            block.setType(Material.AIR);
         }
+        placedBlocks.clear();
     }
 
     @Override
@@ -354,6 +371,55 @@ public class Game implements IGame {
                             Placeholder.component("message", event.message())),
                             Placeholder.parsed("team", team.getBiome() == null ? "none yet" : team.getBiome().toString())
                     ));
+        }
+
+        // Protection Handler (place/break blocks)
+        @EventHandler(priority = EventPriority.HIGH)
+        public void onPlayerPlace(BlockPlaceEvent event) {
+            if (state != GameState.RUNNING || event.isCancelled())
+                return;
+
+            final var player = event.getPlayer();
+            final var gamePlayer = findGamePlayer(player);
+            if (gamePlayer == null)
+                return;
+
+            final var team = gamePlayer.getTeam();
+            if (team == null)
+                return;
+
+            final var block = event.getBlock();
+            if (block.getLocation().getWorld() != getWorld()) {
+                event.setCancelled(true);
+                return;
+            }
+
+            BukkitUtils.editBlockPdc(block, pdc ->
+                    pdc.set(Keys.GAME_PLACED_BLOCK_KEY, PersistentDataType.STRING, player.getUniqueId().toString()));
+            placedBlocks.put(block.getLocation(), block);
+        }
+
+        @EventHandler(priority = EventPriority.HIGH)
+        public void onPlayerBreak(@NotNull BlockBreakEvent event) {
+            if (state != GameState.RUNNING || event.isCancelled() || event.getPlayer().getGameMode().equals(GameMode.CREATIVE)) // creative players can break blocks
+                return;
+
+            final var player = event.getPlayer();
+            final var gamePlayer = findGamePlayer(player);
+            if (gamePlayer == null)
+                return;
+
+            final var block = event.getBlock();
+            if (block.getLocation().getWorld() != getWorld()) {
+                event.setCancelled(true);
+                return;
+            }
+
+            final var pdc = BukkitUtils.getBlockPdc(block);
+            if (pdc == null || !pdc.has(Keys.GAME_PLACED_BLOCK_KEY, PersistentDataType.STRING))
+                event.setCancelled(true);
+
+            placedBlocks.remove(block.getLocation());
         }
 
         // Handler for abilities
