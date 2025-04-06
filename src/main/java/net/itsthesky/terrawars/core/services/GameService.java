@@ -11,7 +11,7 @@ import net.itsthesky.terrawars.api.services.base.Inject;
 import net.itsthesky.terrawars.api.services.base.Service;
 import net.itsthesky.terrawars.core.config.GameConfig;
 import net.itsthesky.terrawars.core.config.GameTeamConfig;
-import net.itsthesky.terrawars.core.impl.ability.snow.IglooAbility;
+import net.itsthesky.terrawars.core.impl.ability.tundra.IglooAbility;
 import net.itsthesky.terrawars.core.impl.game.Game;
 import net.itsthesky.terrawars.util.Checks;
 import net.itsthesky.terrawars.util.Colors;

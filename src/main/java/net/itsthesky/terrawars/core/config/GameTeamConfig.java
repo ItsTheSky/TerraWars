@@ -26,4 +26,7 @@ public class GameTeamConfig {
     @SerializedName("generator_location")
     private Location generatorLocation;
 
+    @SerializedName("biome_id")
+    private String biomeId;
+
 }

@@ -198,6 +198,26 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
         return lore;
     }
 
+    private <T> List<String> buildChoiceSelectorLore(InputControlData<T> inputData, Function<T, String> displayFunction) {
+        final var lore = new ArrayList<String>();
+        lore.add("");
+        for (String line : inputData.getDescription())
+            lore.add("<i><text>" + line);
+        lore.add("");
+
+        final var currentValue = inputData.getCurrentValue() != null ? inputData.getCurrentValue() : inputData.getDefaultValue();
+        if (currentValue != null) {
+            lore.add("[emerald]<accent>• <text>Current value: <base>" + format(currentValue, displayFunction));
+        } else {
+            lore.add("[red]<accent>• <text>Current value is not set!");
+        }
+
+        lore.add("");
+        lore.add("[green]<accent><b>✏</b> <base>Click to change this value!");
+        lore.add("<shade-slate:600><i>You can <b>drop</b> the item to reset the value!</i>");
+        return lore;
+    }
+
     @Override
     public @NotNull GuiItem createChatInputControl(@NotNull String instructions, @NotNull Predicate<String> validator, @NotNull InputControlData<String> inputData) {
         final var item = new ItemBuilder(inputData.getMaterial())
@@ -406,7 +426,7 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
 
             final int rows = Math.max(3, Bukkit.getWorlds().size() / 9 + 2);
             final var chestGui = new ChestGui(rows, ComponentHolder.of(chatService.format(
-                    "<accent>Select World", Colors.GREEN
+                    "<accent><b>→</b> <base>Select World", Colors.GREEN
             )));
 
             final var worldsListPane = new StaticPane(1, 1, 7, rows - 2);
@@ -451,6 +471,76 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
                 evt.setCancelled(true);
                 inputData.getOnInput().accept(inputData.getDefaultValue(), inputData);
                 mainItem.lore(Colors.YELLOW, buildWorldSelectorLore(inputData).toArray(new String[0]));
+                gui.update();
+            }), Slot.fromIndex(4));
+
+            chestGui.addPane(decoPane);
+            chestGui.addPane(worldsListPane);
+            chestGui.addPane(controlsPane);
+
+            chestGui.show(event.getWhoClicked());
+        };
+
+        return new GuiItem(mainItem.getItem(), mainConsumer);
+    }
+
+    @Override
+    public @NotNull <T> GuiItem createChoiceInputControl(@NotNull String name, @NotNull List<String> description,
+                                                         @NotNull List<T> options, @NotNull Function<T, ItemStack> displayFunction,
+                                                         @NotNull Function<T, String> displayNameFunction,
+                                                         @NotNull InputControlData<T> inputData) {
+        final var mainItem = new ItemBuilder(inputData.getMaterial())
+                .name("<accent><b>✏</b> <base>" + inputData.getName(), Colors.YELLOW)
+                .lore(Colors.YELLOW, buildChoiceSelectorLore(inputData, displayNameFunction).toArray(new String[0]));
+
+        final Consumer<InventoryClickEvent> mainConsumer = event -> {
+            event.setCancelled(true);
+            final @NotNull var gui = (ChestGui) Objects.requireNonNull(event.getInventory().getHolder());
+
+            if (event.getClick().equals(ClickType.DROP)) {
+                inputData.getOnInput().accept(inputData.getDefaultValue(), inputData);
+                mainItem.lore(Colors.YELLOW, buildChoiceSelectorLore(inputData, displayNameFunction).toArray(new String[0]));
+                gui.update();
+                return;
+            }
+
+            final int rows = Math.max(3, options.size() / 9 + 2);
+            final var chestGui = new ChestGui(rows, ComponentHolder.of(chatService.format(
+                    "<accent><b>→</b> <base>" + name, Colors.GREEN
+            )));
+
+            final var worldsListPane = new StaticPane(1, 1, 7, rows - 2);
+            final var controlsPane = new StaticPane(0, rows - 1, 9, 1);
+            final var decoPane = createBaseBorderPane(rows);
+
+            int index = -1;
+            for (final var value : options) {
+                index++;
+
+                final Consumer<InventoryClickEvent> consumer = evt -> {
+                    event.setCancelled(true);
+                    inputData.getOnInput().accept(value, inputData);
+                    mainItem.lore(Colors.YELLOW, buildChoiceSelectorLore(inputData, displayNameFunction).toArray(new String[0]));
+                    gui.update();
+                    gui.show(event.getWhoClicked());
+                };
+
+                final var item = new ItemBuilder(displayFunction.apply(value));
+                if (value == inputData.getCurrentValue())
+                    item.glow();
+
+                worldsListPane.addItem(new GuiItem(item.getItem(), consumer), Slot.fromIndex(index));
+            }
+
+            // controls
+            controlsPane.addItem(createBackButton(evt -> {
+                evt.setCancelled(true);
+                gui.show(event.getWhoClicked());
+            }), Slot.fromIndex(0));
+            controlsPane.addItem(createResetButton(evt -> {
+                evt.setCancelled(true);
+                inputData.getOnInput().accept(inputData.getDefaultValue(), inputData);
+                mainItem.lore(Colors.YELLOW, buildChoiceSelectorLore(inputData, displayNameFunction).toArray(new String[0]));
                 gui.update();
             }), Slot.fromIndex(4));
 

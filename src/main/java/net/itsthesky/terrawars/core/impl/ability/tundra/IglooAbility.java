@@ -1,4 +1,4 @@
-package net.itsthesky.terrawars.core.impl.ability.snow;
+package net.itsthesky.terrawars.core.impl.ability.tundra;
 
 import lombok.Getter;
 import net.itsthesky.terrawars.TerraWars;
@@ -36,7 +36,7 @@ public class IglooAbility extends ActiveAbility {
     private final Map<UUID, IglooData> playerIgloos = new HashMap<>();
 
     public IglooAbility() {
-        super("toundra_igloo", Material.ICE, "Igloo Bunker",
+        super("tundra_igloo", Material.ICE, "Igloo Bunker",
                 List.of(
                         "Create a temporary 3x3x3 ice dome around you,",
                         "while expelling enemies out. Will heal you for",

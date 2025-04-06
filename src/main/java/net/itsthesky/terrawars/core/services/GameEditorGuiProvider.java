@@ -4,8 +4,10 @@ import com.github.stefvanschie.inventoryframework.adventuresupport.ComponentHold
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
 import com.github.stefvanschie.inventoryframework.pane.StaticPane;
 import com.github.stefvanschie.inventoryframework.pane.util.Slot;
+import net.itsthesky.terrawars.api.model.biome.IBiome;
 import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.services.IBaseGuiControlsService;
+import net.itsthesky.terrawars.api.services.IBiomeService;
 import net.itsthesky.terrawars.api.services.IChatService;
 import net.itsthesky.terrawars.api.services.IGameEditorGuiProvider;
 import net.itsthesky.terrawars.api.services.base.Inject;
@@ -13,10 +15,11 @@ import net.itsthesky.terrawars.api.services.base.Service;
 import net.itsthesky.terrawars.core.config.GameConfig;
 import net.itsthesky.terrawars.core.config.GameTeamConfig;
 import net.itsthesky.terrawars.util.Colors;
+import net.itsthesky.terrawars.util.ItemBuilder;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -28,13 +31,15 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
     private IChatService chatService;
     @Inject
     private IBaseGuiControlsService baseGuiControlsService;
+    @Inject
+    private IBiomeService biomeService;
 
     @Override
     public @NotNull ChestGui createGameEditorGui(@NotNull GameConfig config) {
 
         final var rows = 4;
         final var chestGui = new ChestGui(rows, ComponentHolder.of(chatService.format(
-                "<accent>Game Configuration Editor", Colors.FUCHSIA
+                "<accent><b>→</b> <base>Game Configuration Editor", Colors.FUCHSIA
         )));
         final var configItemPane = new StaticPane(1, 1, 7, rows - 2);
         final var controlsPane = new StaticPane(0, rows - 1, 9, 1);
@@ -110,6 +115,7 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
         for (final var team : config.getTeams()) {
             final var slot = Slot.fromXY(x, 1);
 
+            int finalX = x;
             final var item = baseGuiControlsService.createSubMenuInputControl(
                     "Configure Team #" + (x + 1),
                     List.of("Edit the team configuration", "for team #" + (x + 1)),
@@ -117,8 +123,7 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
                     evt -> {
                         final var teamGui = createTeamConfigGui(
                                 (ChestGui) Objects.requireNonNull(evt.getInventory().getHolder()),
-                                config, team
-                        );
+                                config, team, finalX + 1);
                         teamGui.show(evt.getWhoClicked());
                     }
             );
@@ -128,10 +133,13 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
         }
     }
 
-    private @NotNull ChestGui createTeamConfigGui(@NotNull ChestGui main, @NotNull GameConfig gameConfig, @NotNull GameTeamConfig teamConfig) {
+    private @NotNull ChestGui createTeamConfigGui(@NotNull ChestGui main,
+                                                  @NotNull GameConfig gameConfig,
+                                                  @NotNull GameTeamConfig teamConfig,
+                                                  int teamIndex) {
         final var rows = 3;
         final var chestGui = new ChestGui(rows, ComponentHolder.of(chatService.format(
-                "<accent>Team Configuration Editor", Colors.FUCHSIA
+                "<accent><b>→</b> <base>Team #"+ teamIndex +" Editor", Colors.FUCHSIA
         )));
         final var configItemPane = new StaticPane(1, 1, 7, rows - 2);
         final var controlsPane = new StaticPane(0, rows - 1, 9, 1);
@@ -182,6 +190,32 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
                         }
                 )
         ), Slot.fromIndex(2));
+
+        final List<IBiome> biomes = biomeService.getAvailableBiomes();
+        configItemPane.addItem(baseGuiControlsService.createChoiceInputControl("Select Biome", List.of(
+                "The biome of the team, to be used", "in the game."
+        ), biomes, value -> {
+            final var lore = new ArrayList<String>();
+            lore.add("");
+            for (final var line : value.getDescription())
+                lore.add("<i><text>" + line);
+            lore.add("");
+            lore.add("<text>Click to select this biome.");
+            return new ItemBuilder(value.getMainBlock())
+                    .name("<accent><b>✏</b> <base>" + value.getName(), value.getScheme())
+                    .lore(value.getScheme(), lore)
+                    .getItem();
+        }, IBiome::getName, new IBaseGuiControlsService.InputControlData<>(
+                Material.CHERRY_SAPLING,
+                null, biomeService.getBiome(teamConfig.getBiomeId()),
+                "Biome",
+                List.of("The biome of the team, to be used", "in the game."),
+                (biome, inputData) -> {
+                    inputData.setCurrentValue(biome);
+                    teamConfig.setBiomeId(biome == null ? null : biome.getId());
+                    gameConfig.save();
+                }
+        )), Slot.fromIndex(3));
 
         // add base controls
         controlsPane.addItem(baseGuiControlsService.createBackButton(evt -> main.show(evt.getWhoClicked())),

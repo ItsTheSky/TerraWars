@@ -11,6 +11,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -82,6 +83,13 @@ public interface IBaseGuiControlsService {
 
     @NotNull GuiItem createWorldSelectorInputControl(@Nullable Predicate<World> filter,
                                                      @NotNull InputControlData<World> inputData);
+
+    <T> @NotNull GuiItem createChoiceInputControl(@NotNull String name,
+                                                  @NotNull List<String> description,
+                                                  @NotNull List<T> options,
+                                                  @NotNull Function<T, ItemStack> displayFunction,
+                                                  @NotNull Function<T, String> displayNameFunction,
+                                                  @NotNull InputControlData<T> inputData);
 
     @NotNull GuiItem createSubMenuInputControl(@NotNull String name,
                                                @NotNull List<String> description,
