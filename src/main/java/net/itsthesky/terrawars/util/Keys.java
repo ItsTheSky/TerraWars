@@ -1,5 +1,6 @@
 package net.itsthesky.terrawars.util;
 
+import com.github.stefvanschie.inventoryframework.util.UUIDTagType;
 import org.bukkit.NamespacedKey;
 
 /**
@@ -21,9 +22,16 @@ public final class Keys {
     /**
      * Key used to mark an item as an ability item.
      * <br>
-     * Will holds a {@link org.bukkit.persistence.PersistentDataType#STRING} value, representing the ability's ID.
+     * Will holds a {@link org.bukkit.persistence.PersistentDataType#STRING string} value, representing the ability's ID.
      */
     public static final NamespacedKey ABILITY_KEY = new NamespacedKey(NAMESPACE, "ability_item");
+
+    /**
+     * Key used to mark an end crystal as a nexus of a team.
+     * <br>
+     * Will holds a {@link UUIDTagType uuid} value, representing the team's UUID.
+     */
+    public static final NamespacedKey NEXUS_TEAM_KEY = new NamespacedKey(NAMESPACE, "nexus_team");
 
     //endregion
 }

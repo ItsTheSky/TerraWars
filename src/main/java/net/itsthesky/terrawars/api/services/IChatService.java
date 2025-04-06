@@ -4,6 +4,7 @@ import lombok.Getter;
 import net.itsthesky.terrawars.util.Colors;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.entity.Player;
@@ -193,8 +194,7 @@ public interface IChatService {
      * @return the joined component
      */
     default @NotNull Component join(@NotNull List<Component> components, @NotNull Component joiner) {
-        return components.stream()
-                .reduce(joiner, Component::append);
+        return Component.join(JoinConfiguration.separator(joiner), components);
     }
 
     /**

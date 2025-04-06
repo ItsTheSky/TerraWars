@@ -1,10 +1,13 @@
 package net.itsthesky.terrawars.core.config;
 
+import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import net.itsthesky.terrawars.api.model.game.IGame;
+import net.itsthesky.terrawars.util.adapters.LocationAdapter;
+import net.itsthesky.terrawars.util.adapters.WorldAdapter;
 import org.bukkit.Location;
 import org.bukkit.World;
 
@@ -18,8 +21,11 @@ import java.util.List;
 public class GameConfig {
 
 
+    @JsonAdapter(WorldAdapter.class)
     private World world;
+    @JsonAdapter(LocationAdapter.class)
     private Location lobby;
+
     private ArrayList<GameTeamConfig> teams = new ArrayList<>();
 
     @SerializedName("game_size")

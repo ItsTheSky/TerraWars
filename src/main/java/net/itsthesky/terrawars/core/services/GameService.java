@@ -1,13 +1,7 @@
 package net.itsthesky.terrawars.core.services;
 
-import com.github.stefvanschie.inventoryframework.gui.GuiItem;
-import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
-import com.github.stefvanschie.inventoryframework.pane.StaticPane;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
-import dev.jorel.commandapi.arguments.WorldArgument;
-import net.itsthesky.terrawars.api.model.biome.IBiome;
 import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
 import net.itsthesky.terrawars.api.services.*;
@@ -21,19 +15,13 @@ import net.itsthesky.terrawars.core.impl.ability.snow.IglooAbility;
 import net.itsthesky.terrawars.core.impl.game.Game;
 import net.itsthesky.terrawars.util.Checks;
 import net.itsthesky.terrawars.util.Colors;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 public class GameService implements IGameService, IService {
@@ -123,15 +111,15 @@ public class GameService implements IGameService, IService {
                                 }
                             }
                         }))
-                        .withSubcommand(new CommandAPICommand("smaple_game")
-                                .executesPlayer((player, args) -> {
-                                    // we'll basically replicate the game creation process here, so
-                                    // 1. create a new game
-                                    // 2. make the player joins it
+                .withSubcommand(new CommandAPICommand("smaple_game")
+                        .executesPlayer((player, args) -> {
+                            // we'll basically replicate the game creation process here, so
+                            // 1. create a new game
+                            // 2. make the player joins it
 
-                                    final var game = createGame(configService.load(GameConfig.class, "games" + File.separator + "sample_game.json"));
-                                    game.tryAddPlayer(player);
-                                }))
+                            final var game = createGame(configService.load(GameConfig.class, "games" + File.separator + "sample_game.json"));
+                            game.tryAddPlayer(player);
+                        }))
                 .withSubcommand(new CommandAPICommand("join")
                         .withArguments(List.of(new StringArgument("game_id")))
                         .executesPlayer((player, args) -> {
@@ -149,6 +137,44 @@ public class GameService implements IGameService, IService {
                             }
 
                             chatService.sendMessage(player, IChatService.MessageSeverity.SUCCESS, "You joined the game with ID <base>" + gameId + "<text>!");
+                        }))
+                .withSubcommand(new CommandAPICommand("edit")
+                        .withArguments(new StringArgument("name"))
+                        .executesPlayer((player, args) -> {
+                            final String configName = (String) args.get("name");
+
+                            // Check if file exists
+                            final File configFile = configService.getFile("games", configName + ".json");
+                            if (!configFile.exists()) {
+                                chatService.sendMessage(player, IChatService.MessageSeverity.ERROR,
+                                        "Game configuration <accent>" + configName + "<text> does not exist!");
+                                return;
+                            }
+
+                            // Load the game configuration
+                            GameConfig gameConfig;
+                            try {
+                                gameConfig = configService.load(GameConfig.class, "games" + File.separator + configName + ".json");
+                            } catch (Exception e) {
+                                chatService.sendMessage(player, IChatService.MessageSeverity.ERROR,
+                                        "Failed to load game configuration: <base>" + e.getMessage());
+                                e.printStackTrace();
+                                return;
+                            }
+
+                            gameConfig.setSaveRunnable(() -> {
+                                try {
+                                    configService.save(gameConfig, "games" + File.separator + configName + ".json");
+                                } catch (Exception e) {
+                                    chatService.sendMessage(player, IChatService.MessageSeverity.ERROR,
+                                            "Failed to create/save game configuration: <base>" + e.getMessage());
+                                    e.printStackTrace();
+                                }
+                            });
+
+                            // Show the GUI
+                            final var newGui = gameEditorGuiProvider.createGameEditorGui(gameConfig);
+                            newGui.show(player);
                         }))
                 .withSubcommand(new CommandAPICommand("create")
                         .withArguments(new StringArgument("name"))
@@ -180,9 +206,9 @@ public class GameService implements IGameService, IService {
 
                             final var newGui = gameEditorGuiProvider.createGameEditorGui(gameConfig);
                             newGui.show(player);
-                        })
-                        .withSubcommand(new CommandAPICommand("load")
-                                .withArguments(new StringArgument("name")))
+                        }))
+                .withSubcommand(new CommandAPICommand("load")
+                        .withArguments(new StringArgument("name"))
                         .executesPlayer((player, args) -> {
                             final String configName = (String) args.get("name");
 
@@ -231,5 +257,11 @@ public class GameService implements IGameService, IService {
                 .filter(file -> file.isFile() && file.getName().endsWith(".json"))
                 .map(file -> file.getName().replace(".json", ""))
                 .toArray(String[]::new);
+    }
+
+    @Override
+    public void destroy() {
+        for (IGame game : games.values())
+            game.cleanupGame();
     }
 }

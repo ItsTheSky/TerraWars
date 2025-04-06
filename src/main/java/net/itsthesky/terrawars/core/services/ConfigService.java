@@ -1,6 +1,9 @@
 package net.itsthesky.terrawars.core.services;
 
 import com.google.gson.Gson;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import net.itsthesky.terrawars.TerraWars;
 import net.itsthesky.terrawars.api.services.IConfigService;
 import net.itsthesky.terrawars.api.services.base.IService;
@@ -12,6 +15,7 @@ import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
+import java.util.logging.Logger;
 
 @Service
 public class ConfigService implements IConfigService, IService {
@@ -69,6 +73,7 @@ public class ConfigService implements IConfigService, IService {
 
     @Override
     public void save(@NotNull Object object, @NotNull String path) {
+        System.out.println("saving config to " + path + "... class: " + object.getClass());
         File file = new File(dataFolder, path);
         if (!file.getParentFile().exists())
             file.getParentFile().mkdirs();

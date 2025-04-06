@@ -124,6 +124,11 @@ public interface IGame {
      */
     void removePlayer(@NotNull Player player);
 
+    /**
+     * Cleanup the game by removing any game-related entities.
+     */
+    void cleanupGame();
+
     void broadcastMessage(@NotNull IChatService.MessageSeverity severity, @NotNull String message, @Nullable IGameTeam specificTeam,
                           @Nullable OfflinePlayer sender);
 

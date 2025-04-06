@@ -158,6 +158,13 @@ public class Game implements IGame {
     }
 
     @Override
+    public void cleanupGame() {
+        for (GameTeam team : teams) {
+            team.cleanup();
+        }
+    }
+
+    @Override
     public void broadcastMessage(IChatService.@NotNull MessageSeverity severity, @NotNull String message,
                                  @Nullable IGameTeam specificTeam, @Nullable OfflinePlayer sender) {
         final var targets = new ArrayList<Audience>();
@@ -289,16 +296,13 @@ public class Game implements IGame {
                 final var player = remainingPlayers.removeFirst();
                 if (!team.tryAddPlayer(player))
                     remainingPlayers.add(player);
-                else {
-                    System.out.println("Added player " + player.getPlayer().getName() + " to team " + team.getBiome());
-                }
             }
         }
 
         for (GameTeam team : teams) {
             for (IGamePlayer player : team.getPlayers()) {
                 if (player.isOnline()) {
-                    // player.getPlayer().teleport(team.getSpawnLocation());
+                    player.getPlayer().teleport(team.getConfig().getSpawnLocation().add(0, 1, 0).toCenterLocation());
                     player.setupHotbar(true);
                 }
             }

@@ -1,7 +1,13 @@
 package net.itsthesky.terrawars.api.model.game;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Objects;
 
 public interface IGameNexus extends IGameHolder {
 
@@ -15,12 +21,17 @@ public interface IGameNexus extends IGameHolder {
 
     int getMaxLevel();
 
-    @NotNull NexusStats getStats(int level);
+    @NotNull NexusStats getStats();
 
-    default @NotNull NexusStats getStats() {
-        return getStats(getLevel());
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    final class NexusStats {
+        private int health;
+        private int maxHealth;
+        private int regenPerSec;
+        private int regenDelay;
     }
-
-    record NexusStats(int maxHealth, int regenPerSec, int regenDelay) {}
 
 }
