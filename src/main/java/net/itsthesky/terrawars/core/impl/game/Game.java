@@ -8,6 +8,7 @@ import net.itsthesky.terrawars.api.model.ability.ActiveAbility;
 import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.model.game.IGamePlayer;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
+import net.itsthesky.terrawars.api.services.IBiomeService;
 import net.itsthesky.terrawars.api.services.IChatService;
 import net.itsthesky.terrawars.api.services.base.IServiceProvider;
 import net.itsthesky.terrawars.api.services.base.Inject;
@@ -40,6 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Game implements IGame {
 
     @Inject private IChatService chatService;
+    @Inject private IBiomeService biomeService;
     private final IServiceProvider serviceProvider;
 
     private final GameConfig config;
@@ -304,6 +306,7 @@ public class Game implements IGame {
                 if (player.isOnline()) {
                     player.getPlayer().teleport(team.getConfig().getSpawnLocation().add(0, 1, 0).toCenterLocation());
                     player.setupHotbar(true);
+                    player.refreshArmor();
                 }
             }
         }

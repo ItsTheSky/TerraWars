@@ -11,9 +11,11 @@ import net.itsthesky.terrawars.util.Colors;
 import net.itsthesky.terrawars.util.ItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.inventory.EquipmentSlot;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
 import java.util.Objects;
 
 @Getter @Setter
@@ -62,6 +64,7 @@ public class GamePlayer implements IGamePlayer {
 
     private static final int ABILITY_SLOT = 8;
 
+    @Override
     public void setSelectedAbility(@Nullable IAbility ability) {
         this.selectedAbility = ability;
 
@@ -86,6 +89,34 @@ public class GamePlayer implements IGamePlayer {
         } else {
             player.getInventory().setItem(ABILITY_SLOT,
                     selectedAbility.buildHotBarItem(this));
+        }
+    }
+
+    @Override
+    public void refreshArmor() {
+        Checks.notNull(this.team, "Player is not in a team (game hasn't started yet)");
+        if (!isOnline())
+            return;
+
+        final var color = this.team.getBiome().getColor();
+
+        final Map<EquipmentSlot, Material> armors = Map.of(
+                EquipmentSlot.HEAD, Material.LEATHER_HELMET,
+                EquipmentSlot.CHEST, Material.LEATHER_CHESTPLATE,
+                EquipmentSlot.LEGS, Material.LEATHER_LEGGINGS,
+                EquipmentSlot.FEET, Material.LEATHER_BOOTS
+        );
+
+        for (Map.Entry<EquipmentSlot, Material> entry : armors.entrySet()) {
+            final var armor = entry.getValue();
+            final var slot = entry.getKey();
+
+            final var item = new ItemBuilder(armor)
+                    .withLeatherArmorColor(color)
+                    .noMovement()
+                    .getItem();
+
+            getPlayer().getInventory().setItem(slot, item);
         }
     }
 }

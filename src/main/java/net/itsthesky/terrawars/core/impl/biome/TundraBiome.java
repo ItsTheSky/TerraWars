@@ -13,7 +13,7 @@ public class TundraBiome extends AbstractBiome {
     public TundraBiome() {
         super("tundra", "Tundra", Colors.SKY,
                 List.of(new IglooAbility()),
-                DyeColor.CYAN, List.of(
+                Colors.SKY.get(Colors.SHADE_600), List.of(
                         "The <base>Tundra<text> is a cold biome,",
                         "characterized by its low temperatures",
                         "and limited vegetation."

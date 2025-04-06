@@ -92,7 +92,14 @@ public class GameService implements IGameService, IService {
                             }
 
                             final var gamePlayer = game.findGamePlayer(player);
-                            gamePlayer.setSelectedAbility(new IglooAbility());
+                            final var abilities = gamePlayer.getTeam().getBiome().getAvailableAbilities();
+                            final var firstAbility = abilities.stream().findFirst();
+                            if (firstAbility.isEmpty()) {
+                                chatService.sendMessage(player, IChatService.MessageSeverity.ERROR, "No abilities available for your team!");
+                                return;
+                            }
+                            
+                            gamePlayer.setSelectedAbility(firstAbility.get());
                         }))
                 .withSubcommand(new CommandAPICommand("list")
                         .executesPlayer((player, args) -> {

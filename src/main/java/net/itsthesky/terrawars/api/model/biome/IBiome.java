@@ -2,7 +2,6 @@ package net.itsthesky.terrawars.api.model.biome;
 
 import net.itsthesky.terrawars.api.model.ability.IAbility;
 import net.kyori.adventure.text.format.TextColor;
-import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,7 +17,7 @@ public interface IBiome {
 
     @NotNull List<IAbility> getAvailableAbilities();
 
-    @NotNull DyeColor getColor();
+    @NotNull TextColor getColor();
 
     @NotNull List<String> getDescription();
 

@@ -33,8 +33,8 @@ public class GameTeam implements IGameTeam {
         this.game = game;
         this.config = config;
         this.spawnLocation = config.getSpawnLocation();
+        this.biome = game.getBiomeService().getBiome(config.getBiomeId());
         this.nexus = new GameNexus(this);
-        this.biome = null; // TODO: Initialize biome
     }
 
     @Override

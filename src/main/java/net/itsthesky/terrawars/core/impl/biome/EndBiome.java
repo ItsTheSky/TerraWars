@@ -12,7 +12,7 @@ public class EndBiome extends AbstractBiome {
     public EndBiome() {
         super("end", "End", Colors.PURPLE,
                 List.of(),
-                DyeColor.PURPLE, List.of(
+                Colors.PURPLE.get(Colors.SHADE_600), List.of(
                         "The <base>End<text> biome is a mysterious biome,",
                         "characterized by its floating islands and",
                         "unique flora and fauna."

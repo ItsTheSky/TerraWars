@@ -123,7 +123,7 @@ public class GameNexus implements IGameNexus {
             location.getWorld().spawn(location.add(0, 1, 0), EnderCrystal.class, crystal -> {
                 this.crystal = crystal;
 
-                this.crystal.setInvulnerable(true);
+                this.crystal.setInvulnerable(false);
                 this.crystal.setCustomNameVisible(false);
                 this.crystal.setShowingBottom(false);
                 this.crystal.getPersistentDataContainer().set(Keys.NEXUS_TEAM_KEY, UUIDTagType.INSTANCE, team.getId());
@@ -156,7 +156,7 @@ public class GameNexus implements IGameNexus {
             final var healthInfos = "<shade-red:200>" + stats.getHealth() + "/" + stats.getMaxHealth() + " <shade-red:500>❤ <shade-slate:500>- <shade-rose:500>" + stats.getRegenPerSec() + " ❤/s";
 
             final List<String> lines = List.of(
-                    "<accent>✦ <text>" + /* getTeam().getBiome().getName() */ "XXX" + " Nexus <shade-slate:500>- <base>Level " + getLevel() + " <accent>✦",
+                    "<accent>✦ <text>" + getTeam().getBiome().getName() + " Nexus <shade-slate:500>- <base>Level " + getLevel() + " <accent>✦",
                     hearts,
                     healthInfos
             );

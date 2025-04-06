@@ -17,7 +17,7 @@ public class AbstractBiome implements IBiome {
     private final String name;
     private final List<TextColor> scheme;
     private final List<IAbility> availableAbilities;
-    private final DyeColor color;
+    private final TextColor color;
     private final List<String> description;
     private final Material mainBlock;
 

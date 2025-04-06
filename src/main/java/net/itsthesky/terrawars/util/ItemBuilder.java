@@ -17,13 +17,14 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.components.UseCooldownComponent;
+import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 public class ItemBuilder {
@@ -186,6 +187,16 @@ public class ItemBuilder {
             if (group != null)
                 cooldown.setCooldownGroup(group);
             meta.setUseCooldown(cooldown);
+        });
+        return this;
+    }
+
+    public ItemBuilder withLeatherArmorColor(TextColor color) {
+        item.editMeta(LeatherArmorMeta.class, meta -> {
+            if (meta == null)
+                return;
+
+            meta.setColor(BukkitUtils.convertColor(color));
         });
         return this;
     }

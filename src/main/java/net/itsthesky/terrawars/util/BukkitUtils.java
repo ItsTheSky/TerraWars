@@ -2,7 +2,9 @@ package net.itsthesky.terrawars.util;
 
 import net.itsthesky.terrawars.TerraWars;
 import net.itsthesky.terrawars.core.impl.game.Game;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
 import org.bukkit.scheduler.BukkitTask;
@@ -58,6 +60,13 @@ public final class BukkitUtils {
             throw new IllegalArgumentException("Runnable cannot be null");
 
         return Bukkit.getScheduler().runTaskLater(TerraWars.instance(), runnable, delay);
+    }
+
+    public static Color convertColor(TextColor color) {
+        if (color == null)
+            throw new IllegalArgumentException("Color cannot be null");
+
+        return Color.fromRGB(color.red(), color.green(), color.blue());
     }
 
     public static void registerListener(Listener listener) {

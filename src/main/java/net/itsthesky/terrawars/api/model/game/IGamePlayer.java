@@ -107,6 +107,11 @@ public interface IGamePlayer extends IGameHolder {
     void setSelectedAbility(@Nullable IAbility ability);
 
     /**
+     * Refresh the armor of this player.
+     */
+    void refreshArmor();
+
+    /**
      * Set up the hotbar for that player, so the last item
      * is the ability item, selected by the player.
      */
