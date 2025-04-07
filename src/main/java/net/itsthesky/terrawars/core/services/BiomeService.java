@@ -20,8 +20,8 @@ public class BiomeService implements IBiomeService {
     private final Map<String, IBiome> biomes = new HashMap<>();
 
     public BiomeService() {
-        registerBiome(new BadlandsBiome());
         registerBiome(new EndBiome());
+        registerBiome(new BadlandsBiome());
         registerBiome(new MushroomBiome());
         registerBiome(new TundraBiome());
     }

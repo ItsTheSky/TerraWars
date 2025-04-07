@@ -2,7 +2,9 @@ package net.itsthesky.terrawars.core.impl.game;
 
 import lombok.Getter;
 import lombok.Setter;
+import net.itsthesky.terrawars.api.model.ability.AbilityType;
 import net.itsthesky.terrawars.api.model.ability.IAbility;
+import net.itsthesky.terrawars.api.model.ability.PassiveAbility;
 import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.model.game.IGamePlayer;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
@@ -72,7 +74,23 @@ public class GamePlayer implements IGamePlayer {
 
     @Override
     public void setSelectedAbility(@Nullable IAbility ability) {
+        // Unregister the previous ability's listener if it was passive
+        if (this.selectedAbility != null) {
+            if (this.selectedAbility.getType() == AbilityType.PASSIVE)
+                ((PassiveAbility) this.selectedAbility).unregisterListener(this);
+
+            this.selectedAbility.onDeselect(this);
+        }
+
         this.selectedAbility = ability;
+
+        // Register the new ability's listener if it is passive
+        if (this.selectedAbility != null) {
+            if (this.selectedAbility.getType() == AbilityType.PASSIVE)
+                ((PassiveAbility) this.selectedAbility).registerListener(this, this.game);
+
+            this.selectedAbility.onSelect(this);
+        }
 
         setupHotbar(false);
     }

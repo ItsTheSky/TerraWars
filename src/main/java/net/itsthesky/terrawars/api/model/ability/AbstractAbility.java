@@ -71,6 +71,7 @@ public abstract class AbstractAbility implements IAbility {
             {
                 cooldowns.remove(playerId);
                 task.cancel();
+                onCooldownEnd(player);
             }
 
             player.refreshHotbar();
@@ -116,4 +117,6 @@ public abstract class AbstractAbility implements IAbility {
 
         return builder.getItem();
     }
+
+    public void onCooldownEnd(@NotNull IGamePlayer player) { }
 }

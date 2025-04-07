@@ -1,6 +1,7 @@
 package net.itsthesky.terrawars.core.impl.biome;
 
 import net.itsthesky.terrawars.api.model.biome.AbstractBiome;
+import net.itsthesky.terrawars.core.impl.ability.end.DoubleJumpAbility;
 import net.itsthesky.terrawars.util.Colors;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
@@ -11,7 +12,7 @@ public class EndBiome extends AbstractBiome {
 
     public EndBiome() {
         super("end", "End", Colors.PURPLE,
-                List.of(),
+                List.of(new DoubleJumpAbility()),
                 Colors.PURPLE.get(Colors.SHADE_600), List.of(
                         "The <base>End<text> biome is a mysterious biome,",
                         "characterized by its floating islands and",
