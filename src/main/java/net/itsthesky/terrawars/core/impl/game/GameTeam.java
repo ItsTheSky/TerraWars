@@ -69,5 +69,6 @@ public class GameTeam implements IGameTeam {
 
     public void cleanup() {
         this.nexus.cleanup();
+        for (GamePlayer player : players.values()) player.cleanup();
     }
 }

@@ -2,7 +2,6 @@ package net.itsthesky.terrawars.core.impl;
 
 import net.itsthesky.terrawars.api.model.shop.ArmorLevel;
 import net.itsthesky.terrawars.api.model.shop.ShopCategory;
-import net.itsthesky.terrawars.api.model.shop.ShopItemType;
 import net.itsthesky.terrawars.api.model.shop.items.OneTimeShopItem;
 import net.itsthesky.terrawars.api.model.shop.items.PermanentShopItem;
 import net.itsthesky.terrawars.util.ItemBuilder;
@@ -26,8 +25,8 @@ public final class ShopCategories {
                             .amount(16)
                             .getItem())
                     .addPrice(Material.IRON_INGOT, 4),
-            new OneTimeShopItem("blackstone", "Blackstone", player ->
-                    new ItemStack(Material.POLISHED_BLACKSTONE, 12))
+            new OneTimeShopItem("bricks", "Bricks", player ->
+                    new ItemStack(Material.BRICKS, 12))
                     .addPrice(Material.IRON_INGOT, 16),
             new OneTimeShopItem("planks", "Planks", player ->
                     new ItemStack(Material.OAK_PLANKS, 8))
@@ -37,25 +36,40 @@ public final class ShopCategories {
     public static final ShopCategory WEAPONS = new ShopCategory("Weapons",
             new ItemStack(Material.GOLDEN_SWORD), List.of(
             new OneTimeShopItem("stone_sword", "Stone Sword",
-                    new ItemStack(Material.STONE_SWORD))
-                    .addPrice(Material.IRON_INGOT, 24),
+                    new ItemBuilder(Material.STONE_SWORD)
+                            .unbreakable()
+                            .getItem())
+                    .addPrice(Material.IRON_INGOT, 24)
+                    .setBeforeBuy(player -> player.getPlayer().getInventory().remove(Material.WOODEN_SWORD)),
             new OneTimeShopItem("iron_sword", "Iron Sword",
-                    new ItemStack(Material.IRON_SWORD))
-                    .addPrice(Material.GOLD_INGOT, 12),
+                    new ItemBuilder(Material.IRON_SWORD)
+                            .unbreakable()
+                            .getItem())
+                    .addPrice(Material.GOLD_INGOT, 12)
+                    .setBeforeBuy(player -> player.getPlayer().getInventory().remove(Material.WOODEN_SWORD)),
             new OneTimeShopItem("diamond_sword", "Diamond Sword",
-                    new ItemStack(Material.DIAMOND_SWORD))
-                    .addPrice(Material.EMERALD, 6),
+                    new ItemBuilder(Material.DIAMOND_SWORD)
+                            .unbreakable()
+                            .getItem())
+                    .addPrice(Material.EMERALD, 6)
+                    .setBeforeBuy(player -> player.getPlayer().getInventory().remove(Material.WOODEN_SWORD)),
             new OneTimeShopItem("netherite_sword", "Netherite Sword",
-                    new ItemStack(Material.NETHERITE_SWORD))
+                    new ItemBuilder(Material.NETHERITE_SWORD)
+                            .unbreakable()
+                            .getItem())
                     .addPrice(Material.EMERALD, 4)
-                    .addPrice(Material.AMETHYST_SHARD, 2),
+                    .addPrice(Material.AMETHYST_SHARD, 2)
+                    .setBeforeBuy(player -> player.getPlayer().getInventory().remove(Material.WOODEN_SWORD)),
             new OneTimeShopItem("bow", "Bow",
-                    new ItemStack(Material.BOW))
+                    new ItemBuilder(Material.BOW)
+                            .unbreakable()
+                            .getItem())
                     .addPrice(Material.IRON_INGOT, 8)
                     .addPrice(Material.GOLD_INGOT, 2),
             new OneTimeShopItem("bow_mk2", "Bow Mk2",
                     new ItemBuilder(Material.BOW)
                             .enchant(Enchantment.POWER, 2)
+                            .unbreakable()
                             .getItem())
                     .addPrice(Material.IRON_INGOT, 24)
                     .addPrice(Material.GOLD_INGOT, 8),
@@ -65,6 +79,7 @@ public final class ShopCategories {
                             .enchant(Enchantment.POWER, 5)
                             .enchant(Enchantment.PUNCH, 2)
                             .enchant(Enchantment.QUICK_CHARGE, 1)
+                            .unbreakable()
                             .getItem())
                     .addPrice(Material.IRON_INGOT, 32)
                     .addPrice(Material.GOLD_INGOT, 16)
@@ -77,6 +92,7 @@ public final class ShopCategories {
             new OneTimeShopItem("fred_the_stick", "<shade-purple:500>Fred the Stick",
                     new ItemBuilder(Material.STICK)
                             .enchant(Enchantment.KNOCKBACK, 10)
+                            .unbreakable()
                             .getItem())
                     .addPrice(Material.EMERALD, 24)
                     .addPrice(Material.AMETHYST_SHARD, 16)
@@ -115,7 +131,7 @@ public final class ShopCategories {
 
     ));
 
-    public static final Set<ShopCategory> CATEGORIES = Set.of(
+    public static final List<ShopCategory> CATEGORIES = List.of(
             BLOCKS, WEAPONS, ARMORS
     );
 

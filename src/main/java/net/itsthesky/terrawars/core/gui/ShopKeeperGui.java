@@ -3,6 +3,7 @@ package net.itsthesky.terrawars.core.gui;
 import com.github.stefvanschie.inventoryframework.adventuresupport.ComponentHolder;
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
+import com.github.stefvanschie.inventoryframework.gui.type.util.Gui;
 import com.github.stefvanschie.inventoryframework.pane.PaginatedPane;
 import com.github.stefvanschie.inventoryframework.pane.Pane;
 import com.github.stefvanschie.inventoryframework.pane.StaticPane;
@@ -38,6 +39,7 @@ public class ShopKeeperGui extends ChestGui {
     private IBaseGuiControlsService baseGuiControlsService;
     @Inject
     private IChatService chatService;
+
     private final IGame game;
     private final IGamePlayer player;
     private final Map<ShopCategory, Integer> categoryPages;
@@ -45,11 +47,15 @@ public class ShopKeeperGui extends ChestGui {
     private final PaginatedPane contentPane;
     private final StaticPane categoriesPane;
 
+    private ShopCategory currentCategory;
+
     public ShopKeeperGui(@NotNull IGame game, @NotNull IGamePlayer player) {
         super(6, ComponentHolder.of(BukkitUtils.chat().format(
                 "<accent><b>→</b> <base>Item Shop", Colors.INDIGO
         )));
         ((Game) game).getServiceProvider().inject(this);
+        setOnBottomClick(evt -> evt.setCancelled(true));
+        setOnClose(evt -> setCategory(null));
 
         this.game = game;
         this.player = player;
@@ -63,7 +69,11 @@ public class ShopKeeperGui extends ChestGui {
         int index = 0;
         for (final var category : ShopCategories.CATEGORIES) {
             final var item = createCategoryItem(category);
-            categoriesPane.addItem(item, Slot.fromIndex(index));
+            this.categoryItems.put(category, item);
+
+            categoriesPane.addItem(new GuiItem(item.getItem(),
+                    evt -> setCategory(category)),
+                    Slot.fromIndex(index));
 
             final var pane = createCategoryPane(category);
             contentPane.addPage(pane);
@@ -72,17 +82,23 @@ public class ShopKeeperGui extends ChestGui {
             index++;
         }
 
-        selectFirstCategory();
-    }
-
-    private void selectFirstCategory() {
-        if (categoryPages.isEmpty()) return;
-        final var firstCategory =
-                categoryPages.keySet().iterator().next();
-        setCategory(firstCategory);
+        setCategory(ShopCategories.CATEGORIES.getFirst());
     }
 
     private void setCategory(@NotNull ShopCategory category) {
+        if (this.currentCategory != null && this.currentCategory != category) {
+            this.categoryItems.get(this.currentCategory).removeGlow();
+        }
+
+        if (category == null) {
+            this.contentPane.setPage(0);
+            this.currentCategory = null;
+            return;
+        }
+
+        this.currentCategory = category;
+        this.categoryItems.get(category).glow();
+
         this.contentPane.setPage(categoryPages.get(category));
         this.update();
     }
@@ -147,6 +163,8 @@ public class ShopKeeperGui extends ChestGui {
                     player.getPlayer().getInventory().removeItem(new ItemStack(material, amount));
                 }
 
+                shopItem.getBeforeBuy().accept(this.player);
+
                 if (shopItem.getType() == ShopItemType.ONE_TIME && shopItem instanceof final OneTimeShopItem oneTimeShopItem) {
                     final var givenItem = new ItemBuilder(oneTimeShopItem.getItemBuilder().apply(this.player))
                             .setCustomData(Keys.SHOP_ITEM_KEY, PersistentDataType.STRING, shopItem.getId());
@@ -158,6 +176,8 @@ public class ShopKeeperGui extends ChestGui {
                 chatService.sendMessage(player.getPlayer(), IChatService.MessageSeverity.SUCCESS,
                         "You bought " + shopItem.getName() + "!");
                 BukkitUtils.playSound(player.getPlayer(), Sound.BLOCK_NOTE_BLOCK_PLING, 1, 1);
+
+                shopItem.getAfterBuy().accept(this.player);
 
                 final var gui = new ShopKeeperGui(game, player);
                 gui.setCategory(category);
@@ -175,19 +195,15 @@ public class ShopKeeperGui extends ChestGui {
         return pane;
     }
 
-    private GuiItem createCategoryItem(@NotNull ShopCategory category) {
+    private ItemBuilder createCategoryItem(@NotNull ShopCategory category) {
         final var lore = new ArrayList<String>();
         lore.add("");
-        lore.add("<accent><b>→ </b> <base>Click to open this category!");
-        lore.add("");
+        lore.add("<accent><b>✔</b> <base>Click to open this category!");
 
-        final var item = new ItemBuilder(category.getIcon())
+        return new ItemBuilder(category.getIcon())
                 .cleanLore()
-                .lore(Colors.TEAL, lore)
-                .name("<accent><b>→</b> <base>" + category.getName(), Colors.TEAL)
-                .getItem();
-
-        return new GuiItem(item, evt -> setCategory(category));
+                .lore(Colors.LIME, lore)
+                .name("<accent><b>→</b> <base>" + category.getName(), Colors.SKY);
     }
 
     private boolean hasEnoughToBuy(@NotNull AbstractShopItem shopItem) {

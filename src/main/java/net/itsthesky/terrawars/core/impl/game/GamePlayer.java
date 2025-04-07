@@ -5,37 +5,37 @@ import lombok.Setter;
 import net.itsthesky.terrawars.api.model.ability.AbilityType;
 import net.itsthesky.terrawars.api.model.ability.IAbility;
 import net.itsthesky.terrawars.api.model.ability.PassiveAbility;
-import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.model.game.IGamePlayer;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
 import net.itsthesky.terrawars.api.model.shop.ArmorLevel;
 import net.itsthesky.terrawars.api.services.IChatService;
-import net.itsthesky.terrawars.util.Checks;
-import net.itsthesky.terrawars.util.Colors;
-import net.itsthesky.terrawars.util.ItemBuilder;
-import net.itsthesky.terrawars.util.Keys;
+import net.itsthesky.terrawars.util.*;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Getter @Setter
 public class GamePlayer implements IGamePlayer {
 
     private final OfflinePlayer offlinePlayer;
     private final Game game;
+    private @Nullable IGameTeam team;
 
     private ArmorLevel armorLevel = ArmorLevel.LEATHER;
     private GamePlayerState state;
-    private @Nullable IGameTeam team;
 
     private @Nullable IAbility selectedAbility;
+    private BukkitTask updatePlayerTask;
 
     public GamePlayer(OfflinePlayer player, Game game) {
         this.offlinePlayer = player;
@@ -45,6 +45,7 @@ public class GamePlayer implements IGamePlayer {
 
         this.team = null;
         this.selectedAbility = null;
+        this.updatePlayerTask = null;
     }
 
 
@@ -127,6 +128,10 @@ public class GamePlayer implements IGamePlayer {
         player.setLevel(0);
         player.setExp(0);
 
+        player.setHealth(20);
+        player.setFoodLevel(20);
+        player.setSaturation(0);
+
         final var availableAbilities = this.team.getBiome().getAvailableAbilities();
         if (availableAbilities.isEmpty()) {
             game.getChatService().sendMessage(player, IChatService.MessageSeverity.WARNING, "No abilities available for this team.");
@@ -139,6 +144,45 @@ public class GamePlayer implements IGamePlayer {
 
         setupHotbar(true);
         setArmorLevel(ArmorLevel.LEATHER);
+
+        this.updatePlayerTask = createUpdatePlayerTask();
+    }
+
+    private static final Set<Material> MELEE_MATERIALS = Set.of(
+            Material.WOODEN_SWORD,
+            Material.STONE_SWORD,
+            Material.IRON_SWORD,
+            Material.DIAMOND_SWORD,
+            Material.NETHERITE_SWORD
+    );
+
+    private BukkitTask createUpdatePlayerTask() {
+        return BukkitUtils.runTaskTimer(() -> {
+            if (!isOnline())
+                return;
+            final var player = Objects.requireNonNull(this.offlinePlayer.getPlayer());
+
+            // Check if there's any melee (swords). If not, add a wooden sword
+            List<Material> foundMeleeWeapons = new ArrayList<>();
+            for (final var mat : MELEE_MATERIALS) {
+                if (player.getInventory().contains(mat))
+                    foundMeleeWeapons.add(mat);
+                if (player.getItemOnCursor().getType() == mat)
+                    foundMeleeWeapons.add(mat);
+            }
+
+            if (foundMeleeWeapons.isEmpty()) {
+                player.getInventory().addItem(new ItemBuilder(Material.WOODEN_SWORD)
+                        .cleanLore()
+                        .unbreakable()
+                        .destroyOnDrop()
+                        .lore(Colors.ORANGE, "<text>Default melee weapon")
+                        .getItem());
+            } else if (foundMeleeWeapons.size() > 1 &&
+                    foundMeleeWeapons.contains(Material.WOODEN_SWORD)) {
+                player.getInventory().remove(Material.WOODEN_SWORD);
+            }
+        }, 20, 20);
     }
 
     @Override
@@ -193,5 +237,20 @@ public class GamePlayer implements IGamePlayer {
         }
 
         return this.armorLevel;
+    }
+
+    @Override
+    public void cleanup() {
+        if (!isOnline())
+            return;
+
+        final var player = Objects.requireNonNull(this.offlinePlayer.getPlayer());
+        player.getInventory().clear();
+        player.getPersistentDataContainer().remove(Keys.ARMOR_LEVEL_KEY);
+
+        if (this.updatePlayerTask != null) {
+            this.updatePlayerTask.cancel();
+            this.updatePlayerTask = null;
+        }
     }
 }

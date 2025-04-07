@@ -145,4 +145,10 @@ public interface IGamePlayer extends IGameHolder {
      * @return the armor level of this player
      */
     @NotNull ArmorLevel getArmorLevel();
+
+    /**
+     * Clean up the player. This should be called at the end of the game,
+     * right before teleporting the player to the lobby.
+     */
+    void cleanup();
 }

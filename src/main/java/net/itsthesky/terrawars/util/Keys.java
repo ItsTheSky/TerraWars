@@ -57,6 +57,14 @@ public final class Keys {
      */
     public static final NamespacedKey GENERATOR_ITEM_KEY = new NamespacedKey(NAMESPACE, "generator_item");
 
+    /**
+     * Key used to mark an item as "destroyed-on-drop", meaning it will be destroyed
+     * when dropped on the ground.
+     * <br>
+     * Will holds a {@link org.bukkit.persistence.PersistentDataType#BOOLEAN boolean} value.
+     */
+    public static final NamespacedKey DESTROY_ON_DROP_KEY = new NamespacedKey(NAMESPACE, "destroy_on_drop");
+
     //endregion
 
     //region Player-specific keys

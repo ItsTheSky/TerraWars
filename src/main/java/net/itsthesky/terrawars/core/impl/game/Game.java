@@ -153,7 +153,6 @@ public class Game implements IGame {
         broadcastMessage(IChatService.MessageSeverity.INFO,
                 "<base>" + player.getName() + "<text> joined the game. <accent>[<text>" + waitingPlayers.size() + "<accent>/<text>" + maxPlayers + "<accent>]");
 
-        // TODO: remove this so it actually only starts when there's enough players :)
         if (waitingPlayers.size() >= maxPlayers)
             setState(GameState.STARTING);
         return true;
@@ -174,8 +173,9 @@ public class Game implements IGame {
 
     @Override
     public void cleanupGame() {
-        for (GameTeam team : teams)
-            team.cleanup();
+        for (GameTeam team : teams) team.cleanup();
+        for (var generator : generators) generator.cleanup();
+        for (var player : waitingPlayers) player.cleanup();
 
         for (Block block : placedBlocks.values()) {
             if (block.getLocation().getWorld() != getWorld())
@@ -183,9 +183,6 @@ public class Game implements IGame {
 
             block.setType(Material.AIR);
         }
-
-        for (var generator : generators)
-            generator.cleanup();
     }
 
     @Override
@@ -334,8 +331,7 @@ public class Game implements IGame {
             for (IGamePlayer player : team.getPlayers()) {
                 if (player.isOnline()) {
                     player.getPlayer().teleport(team.getConfig().getSpawnLocation().add(0, 1, 0).toCenterLocation());
-                    player.setupHotbar(true);
-                    player.refreshArmor();
+                    player.setup();
                 }
             }
         }

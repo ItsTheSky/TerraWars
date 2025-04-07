@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 @Getter
@@ -18,7 +19,10 @@ public abstract class AbstractShopItem {
     private final String id;
     private final String name;
     private final ShopItemType type;
+
     private @NotNull Predicate<IGamePlayer> canBuy = pl -> true;
+    private @NotNull Consumer<IGamePlayer> beforeBuy = pl -> {};
+    private @NotNull Consumer<IGamePlayer> afterBuy = pl -> {};
 
     private final Map<Material, Integer> price;
 
@@ -38,6 +42,20 @@ public abstract class AbstractShopItem {
         Checks.notNull(canBuy, "Predicate cannot be null");
 
         this.canBuy = canBuy;
+        return this;
+    }
+
+    public AbstractShopItem setBeforeBuy(Consumer<IGamePlayer> beforeBuy) {
+        Checks.notNull(beforeBuy, "Consumer cannot be null");
+
+        this.beforeBuy = beforeBuy;
+        return this;
+    }
+
+    public AbstractShopItem setAfterBuy(Consumer<IGamePlayer> afterBuy) {
+        Checks.notNull(afterBuy, "Consumer cannot be null");
+
+        this.afterBuy = afterBuy;
         return this;
     }
 

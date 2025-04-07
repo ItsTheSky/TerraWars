@@ -136,6 +136,17 @@ public class ItemBuilder {
         return this;
     }
 
+    public ItemBuilder removeGlow() {
+        item.editMeta(meta -> {
+            if (meta == null)
+                return;
+
+            meta.removeEnchant(Enchantment.LURE);
+            meta.removeItemFlags(ItemFlag.HIDE_ENCHANTS);
+        });
+        return this;
+    }
+
     public ItemBuilder cleanLore() {
         return flags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_UNBREAKABLE,
                 ItemFlag.HIDE_DESTROYS, ItemFlag.HIDE_PLACED_ON, ItemFlag.HIDE_ATTRIBUTES,
@@ -152,13 +163,11 @@ public class ItemBuilder {
     }
 
     public ItemBuilder noMovement() {
-        item.editMeta(meta -> {
-            if (meta == null)
-                return;
+        return setCustomData(Keys.NO_MOVE_KEY, PersistentDataType.BOOLEAN, true);
+    }
 
-            meta.getPersistentDataContainer().set(Keys.NO_MOVE_KEY, PersistentDataType.BOOLEAN, true);
-        });
-        return this;
+    public ItemBuilder destroyOnDrop() {
+        return setCustomData(Keys.DESTROY_ON_DROP_KEY, PersistentDataType.BOOLEAN, true);
     }
 
     public ItemBuilder setCustomModelData(int data) {
@@ -246,6 +255,18 @@ public class ItemBuilder {
 
             if (event.getItem().getPersistentDataContainer().has(Keys.NO_MOVE_KEY, PersistentDataType.BOOLEAN))
                 event.setCancelled(true);
+        }
+
+        @EventHandler
+        public void onItemDropDestroy(@NotNull PlayerDropItemEvent event) {
+            final var item = event.getItemDrop();
+            if (item == null)
+                return;
+
+            if (item.getItemStack().getPersistentDataContainer().getOrDefault(Keys.DESTROY_ON_DROP_KEY, PersistentDataType.BOOLEAN, false)) {
+                item.remove();
+                event.setCancelled(true);
+            }
         }
     }
 }
