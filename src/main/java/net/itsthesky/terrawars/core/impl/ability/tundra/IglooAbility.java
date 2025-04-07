@@ -42,7 +42,7 @@ public class IglooAbility extends ActiveAbility {
                         "while expelling enemies out. Will heal you for",
                         "<shade-red:500>2 ♥</shade-red> per seconds while you're inside.",
                         "",
-                        "<shade-emerald:200>The igloo lasts <shade-emerald:500>10 seconds</shade-red>!"
+                        "<shade-emerald:200>The igloo lasts <shade-emerald:500>10 seconds</shade-emerald>!"
                 ), 60);
     }
 

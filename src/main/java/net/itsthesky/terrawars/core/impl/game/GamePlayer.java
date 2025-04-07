@@ -3,6 +3,7 @@ package net.itsthesky.terrawars.core.impl.game;
 import lombok.Getter;
 import lombok.Setter;
 import net.itsthesky.terrawars.api.model.ability.AbilityType;
+import net.itsthesky.terrawars.api.model.ability.ActiveAbility;
 import net.itsthesky.terrawars.api.model.ability.IAbility;
 import net.itsthesky.terrawars.api.model.ability.PassiveAbility;
 import net.itsthesky.terrawars.api.model.game.IGamePlayer;
@@ -29,6 +30,7 @@ public class GamePlayer implements IGamePlayer {
 
     private final OfflinePlayer offlinePlayer;
     private final Game game;
+    private final GamePlayerListener listener;
     private @Nullable IGameTeam team;
 
     private ArmorLevel armorLevel = ArmorLevel.LEATHER;
@@ -46,6 +48,8 @@ public class GamePlayer implements IGamePlayer {
         this.team = null;
         this.selectedAbility = null;
         this.updatePlayerTask = null;
+
+        BukkitUtils.registerListener(listener = new GamePlayerListener());
     }
 
 
@@ -176,6 +180,7 @@ public class GamePlayer implements IGamePlayer {
                         .cleanLore()
                         .unbreakable()
                         .destroyOnDrop()
+                        .setCustomData(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, true)
                         .lore(Colors.ORANGE, "<text>Default melee weapon")
                         .getItem());
             } else if (foundMeleeWeapons.size() > 1 &&
@@ -252,5 +257,29 @@ public class GamePlayer implements IGamePlayer {
             this.updatePlayerTask.cancel();
             this.updatePlayerTask = null;
         }
+
+        if (this.listener != null)
+            BukkitUtils.unregisterListener(this.listener);
+    }
+
+    public class GamePlayerListener implements Listener {
+
+        @EventHandler
+        public void onItemDrop(@NotNull PlayerDropItemEvent event) {
+            if (event.getPlayer() != offlinePlayer)
+                return;
+
+            final var item = event.getItemDrop();
+            if (item == null || selectedAbility == null || !selectedAbility.getType().equals(AbilityType.ACTIVE))
+                return;
+            final var ability = (ActiveAbility) selectedAbility;
+
+            if (item.getItemStack().getPersistentDataContainer().getOrDefault(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, false)) {
+                ability.use(GamePlayer.this, game);
+                event.setCancelled(true);
+                item.remove();
+            }
+        }
+
     }
 }

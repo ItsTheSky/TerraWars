@@ -65,6 +65,14 @@ public final class Keys {
      */
     public static final NamespacedKey DESTROY_ON_DROP_KEY = new NamespacedKey(NAMESPACE, "destroy_on_drop");
 
+    /**
+     * Key used to mark an item as a "weapon", so it may be used to
+     * call abilities.
+     * <br>
+     * Will holds a {@link org.bukkit.persistence.PersistentDataType#BOOLEAN boolean} value.
+     */
+    public static final NamespacedKey WEAPON_KEY = new NamespacedKey(NAMESPACE, "weapon_item");
+
     //endregion
 
     //region Player-specific keys

@@ -5,9 +5,11 @@ import net.itsthesky.terrawars.api.model.shop.ShopCategory;
 import net.itsthesky.terrawars.api.model.shop.items.OneTimeShopItem;
 import net.itsthesky.terrawars.api.model.shop.items.PermanentShopItem;
 import net.itsthesky.terrawars.util.ItemBuilder;
+import net.itsthesky.terrawars.util.Keys;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
 import java.util.Set;
@@ -37,24 +39,28 @@ public final class ShopCategories {
             new ItemStack(Material.GOLDEN_SWORD), List.of(
             new OneTimeShopItem("stone_sword", "Stone Sword",
                     new ItemBuilder(Material.STONE_SWORD)
+                            .setCustomData(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, true)
                             .unbreakable()
                             .getItem())
                     .addPrice(Material.IRON_INGOT, 24)
                     .setBeforeBuy(player -> player.getPlayer().getInventory().remove(Material.WOODEN_SWORD)),
             new OneTimeShopItem("iron_sword", "Iron Sword",
                     new ItemBuilder(Material.IRON_SWORD)
+                            .setCustomData(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, true)
                             .unbreakable()
                             .getItem())
                     .addPrice(Material.GOLD_INGOT, 12)
                     .setBeforeBuy(player -> player.getPlayer().getInventory().remove(Material.WOODEN_SWORD)),
             new OneTimeShopItem("diamond_sword", "Diamond Sword",
                     new ItemBuilder(Material.DIAMOND_SWORD)
+                            .setCustomData(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, true)
                             .unbreakable()
                             .getItem())
                     .addPrice(Material.EMERALD, 6)
                     .setBeforeBuy(player -> player.getPlayer().getInventory().remove(Material.WOODEN_SWORD)),
             new OneTimeShopItem("netherite_sword", "Netherite Sword",
                     new ItemBuilder(Material.NETHERITE_SWORD)
+                            .setCustomData(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, true)
                             .unbreakable()
                             .getItem())
                     .addPrice(Material.EMERALD, 4)
@@ -62,12 +68,14 @@ public final class ShopCategories {
                     .setBeforeBuy(player -> player.getPlayer().getInventory().remove(Material.WOODEN_SWORD)),
             new OneTimeShopItem("bow", "Bow",
                     new ItemBuilder(Material.BOW)
+                            .setCustomData(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, true)
                             .unbreakable()
                             .getItem())
                     .addPrice(Material.IRON_INGOT, 8)
                     .addPrice(Material.GOLD_INGOT, 2),
             new OneTimeShopItem("bow_mk2", "Bow Mk2",
                     new ItemBuilder(Material.BOW)
+                            .setCustomData(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, true)
                             .enchant(Enchantment.POWER, 2)
                             .unbreakable()
                             .getItem())
@@ -76,6 +84,7 @@ public final class ShopCategories {
 
             new OneTimeShopItem("bow_mk3", "Bow Mk3",
                     new ItemBuilder(Material.BOW)
+                            .setCustomData(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, true)
                             .enchant(Enchantment.POWER, 5)
                             .enchant(Enchantment.PUNCH, 2)
                             .enchant(Enchantment.QUICK_CHARGE, 1)
@@ -91,6 +100,7 @@ public final class ShopCategories {
 
             new OneTimeShopItem("fred_the_stick", "<shade-purple:500>Fred the Stick",
                     new ItemBuilder(Material.STICK)
+                            .setCustomData(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, true)
                             .enchant(Enchantment.KNOCKBACK, 10)
                             .unbreakable()
                             .getItem())

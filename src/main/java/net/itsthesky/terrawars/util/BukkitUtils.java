@@ -11,6 +11,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.event.Event;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -83,6 +84,13 @@ public final class BukkitUtils {
             throw new IllegalArgumentException("Listener cannot be null");
 
         Bukkit.getPluginManager().registerEvents(listener, TerraWars.instance());
+    }
+
+    public static void unregisterListener(Listener listener) {
+        if (listener == null)
+            throw new IllegalArgumentException("Listener cannot be null");
+
+        HandlerList.unregisterAll(listener);
     }
 
     public static @Nullable PersistentDataContainer getBlockPdc(@NotNull Block block) {
