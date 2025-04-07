@@ -98,7 +98,7 @@ public class GameService implements IGameService, IService {
                                 chatService.sendMessage(player, IChatService.MessageSeverity.ERROR, "No abilities available for your team!");
                                 return;
                             }
-                            
+
                             gamePlayer.setSelectedAbility(firstAbility.get());
                         }))
                 .withSubcommand(new CommandAPICommand("list")
@@ -120,12 +120,9 @@ public class GameService implements IGameService, IService {
                         }))
                 .withSubcommand(new CommandAPICommand("smaple_game")
                         .executesPlayer((player, args) -> {
-                            // we'll basically replicate the game creation process here, so
-                            // 1. create a new game
-                            // 2. make the player joins it
-
                             final var game = createGame(configService.load(GameConfig.class, "games" + File.separator + "sample_game.json"));
                             game.tryAddPlayer(player);
+                            ((Game) game).setupStartedGame();
                         }))
                 .withSubcommand(new CommandAPICommand("join")
                         .withArguments(List.of(new StringArgument("game_id")))

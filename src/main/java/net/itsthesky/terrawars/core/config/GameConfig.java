@@ -31,6 +31,9 @@ public class GameConfig {
     @SerializedName("game_size")
     private IGame.GameSize gameSize = IGame.GameSize.SOLO;
 
+    @SerializedName("generators")
+    private List<GameGeneratorConfig> generators = new ArrayList<>();
+
     private transient Runnable saveRunnable;
     public void save() {
         if (saveRunnable != null)

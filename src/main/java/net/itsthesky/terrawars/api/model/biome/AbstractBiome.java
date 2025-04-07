@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.itsthesky.terrawars.api.model.ability.IAbility;
 import net.kyori.adventure.text.format.TextColor;
-import org.bukkit.DyeColor;
 import org.bukkit.Material;
 
 import java.util.List;

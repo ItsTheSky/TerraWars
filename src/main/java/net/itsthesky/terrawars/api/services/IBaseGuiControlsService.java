@@ -41,6 +41,8 @@ public interface IBaseGuiControlsService {
 
     @NotNull GuiItem createResetButton(@NotNull Consumer<InventoryClickEvent> onClick);
 
+    @NotNull GuiItem createAddButton(@NotNull Consumer<InventoryClickEvent> onClick);
+
     //endregion
 
     //region Input Controls

@@ -98,6 +98,14 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
                 .getItem(), onClick);
     }
 
+    @Override
+    public @NotNull GuiItem createAddButton(@NotNull Consumer<InventoryClickEvent> onClick) {
+        return new GuiItem(new ItemBuilder(Material.LIME_WOOL)
+                .name("<accent><b>➕</b> <base>Add", Colors.LIME)
+                .lore(Colors.LIME, "<text>Add a new object to the list.")
+                .getItem(), onClick);
+    }
+
     private final Map<UUID, Consumer<AsyncChatEvent>> waitingForChat = new HashMap<>();
 
     private <T> String format(@Nullable T value, @Nullable Function<T, String> displayFunction) {

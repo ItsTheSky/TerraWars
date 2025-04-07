@@ -52,6 +52,7 @@ public class Game implements IGame {
     private final GameConfig config;
     private final List<GameTeam> teams;
     private final Set<GamePlayer> waitingPlayers;
+    private final Set<GameGenerator> generators;
     private final UUID id;
     private final int maxPlayers;
 
@@ -71,6 +72,7 @@ public class Game implements IGame {
         this.teams = new ArrayList<>();
         this.waitingPlayers = new HashSet<>();
         this.placedBlocks = new HashMap<>();
+        this.generators = new HashSet<>();
 
         this.maxPlayers = this.config.getGameSize().getPlayerPerTeam() * 4;
     }
@@ -171,8 +173,6 @@ public class Game implements IGame {
     public void cleanupGame() {
         for (GameTeam team : teams)
             team.cleanup();
-        teams.clear();
-        waitingPlayers.clear();
 
         for (Block block : placedBlocks.values()) {
             if (block.getLocation().getWorld() != getWorld())
@@ -180,7 +180,9 @@ public class Game implements IGame {
 
             block.setType(Material.AIR);
         }
-        placedBlocks.clear();
+
+        for (var generator : generators)
+            generator.cleanup();
     }
 
     @Override
@@ -293,9 +295,10 @@ public class Game implements IGame {
     }
 
     public void setupStartedGame() {
-        // 1. give everyone a team
-        // 2. teleport everyone to their team spawn
-        // 3. set the game state to RUNNING
+        if (this.startCountdownTask != null) {
+            this.startCountdownTask.cancel();
+            this.startCountdownTask = null;
+        }
 
         this.teams.clear();
         for (final var cfg : config.getTeams()) {
@@ -326,6 +329,17 @@ public class Game implements IGame {
                     player.refreshArmor();
                 }
             }
+        }
+
+        // Setup generators
+        for (var generator : config.getGenerators()) {
+            final var gameGenerator = new GameGenerator(this, generator);
+            generators.add(gameGenerator);
+        }
+
+        for (var team : teams) {
+            final var generator = new GameGenerator(this, team.getConfig().getGeneratorLocation());
+            generators.add(generator);
         }
 
         setState(GameState.RUNNING);

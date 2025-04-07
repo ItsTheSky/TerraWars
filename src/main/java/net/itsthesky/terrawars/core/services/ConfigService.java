@@ -73,7 +73,6 @@ public class ConfigService implements IConfigService, IService {
 
     @Override
     public void save(@NotNull Object object, @NotNull String path) {
-        System.out.println("saving config to " + path + "... class: " + object.getClass());
         File file = new File(dataFolder, path);
         if (!file.getParentFile().exists())
             file.getParentFile().mkdirs();

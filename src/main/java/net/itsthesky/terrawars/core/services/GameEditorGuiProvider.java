@@ -1,11 +1,13 @@
 package net.itsthesky.terrawars.core.services;
 
 import com.github.stefvanschie.inventoryframework.adventuresupport.ComponentHolder;
+import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
 import com.github.stefvanschie.inventoryframework.pane.StaticPane;
 import com.github.stefvanschie.inventoryframework.pane.util.Slot;
 import net.itsthesky.terrawars.api.model.biome.IBiome;
 import net.itsthesky.terrawars.api.model.game.IGame;
+import net.itsthesky.terrawars.api.model.game.generator.GameGeneratorType;
 import net.itsthesky.terrawars.api.services.IBaseGuiControlsService;
 import net.itsthesky.terrawars.api.services.IBiomeService;
 import net.itsthesky.terrawars.api.services.IChatService;
@@ -13,10 +15,14 @@ import net.itsthesky.terrawars.api.services.IGameEditorGuiProvider;
 import net.itsthesky.terrawars.api.services.base.Inject;
 import net.itsthesky.terrawars.api.services.base.Service;
 import net.itsthesky.terrawars.core.config.GameConfig;
+import net.itsthesky.terrawars.core.config.GameGeneratorConfig;
 import net.itsthesky.terrawars.core.config.GameTeamConfig;
 import net.itsthesky.terrawars.util.Colors;
 import net.itsthesky.terrawars.util.ItemBuilder;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -102,6 +108,18 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
                     case DUO -> "Duo (2v2v2v2)";
                     case SQUAD -> "Squad (4v4v4v4)";
                 }), Slot.fromIndex(2));
+
+        pane.addItem(baseGuiControlsService.createSubMenuInputControl(
+                "Configure Generators",
+                List.of("Edit the generators configuration", "for the game."),
+                Material.IRON_BLOCK,
+                evt -> {
+                    final var generatorGui = createGeneratorsConfigGui(
+                            (ChestGui) Objects.requireNonNull(evt.getInventory().getHolder()),
+                            config);
+                    generatorGui.show(evt.getWhoClicked());
+                }
+        ), Slot.fromIndex(3));
     }
 
     private void populateTeamConfigItemPane(@NotNull final StaticPane pane, @NotNull final GameConfig config) {
@@ -219,6 +237,144 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
 
         // add base controls
         controlsPane.addItem(baseGuiControlsService.createBackButton(evt -> main.show(evt.getWhoClicked())),
+                Slot.fromIndex(0));
+
+        chestGui.addPane(decoPane);
+        chestGui.addPane(configItemPane);
+        chestGui.addPane(controlsPane);
+
+        return chestGui;
+    }
+
+    private @NotNull GuiItem createGeneratorItem(@NotNull GameGeneratorConfig generator,
+                                                 @NotNull GameConfig gameConfig,
+                                                 @NotNull ChestGui main,
+                                                 @NotNull Slot slot,
+                                                 @NotNull StaticPane pane,
+                                                 int i) {
+        final var material = switch (generator.getGeneratorType()) {
+            case BASE -> Material.IRON_BLOCK;
+            case DIAMOND -> Material.DIAMOND_BLOCK;
+            case EMERALD -> Material.EMERALD_BLOCK;
+            case AMETHYST -> Material.AMETHYST_BLOCK;
+        };
+
+        return baseGuiControlsService.createSubMenuInputControl(
+                "Configure Generator #" + (i + 1),
+                List.of("Edit the generator configuration", "for generator #" + (i + 1)),
+                material,
+                evt -> {
+                    if (evt.getClick() == ClickType.DROP) {
+                        gameConfig.getGenerators().remove(generator);
+                        gameConfig.save();
+
+                        final var generatorGui = createGeneratorsConfigGui(
+                                main, gameConfig);
+                        generatorGui.show(evt.getWhoClicked());
+                        return;
+                    }
+
+                    final var gui = (ChestGui) Objects.requireNonNull(evt.getInventory().getHolder());
+                    final var generatorGui = createGeneratorConfigGui(
+                            gui, gameConfig, generator, slot, pane, i + 1);
+                    generatorGui.show(evt.getWhoClicked());
+                }
+        );
+    }
+
+    private @NotNull ChestGui createGeneratorsConfigGui(@NotNull ChestGui main,
+                                                       @NotNull GameConfig gameConfig) {
+        final var generators = gameConfig.getGenerators();
+        final int rows = Math.max(3, generators.size() /  + 2);
+        final var chestGui = new ChestGui(rows, ComponentHolder.of(chatService.format(
+                "<accent><b>→</b> <base>Generator Editor", Colors.FUCHSIA
+        )));
+
+        final var generatorsPane = new StaticPane(1, 1, 7, rows - 2);
+        final var decoPane = baseGuiControlsService.createBaseBorderPane(rows);
+        final var controlsPane = new StaticPane(0, rows - 1, 9, 1);
+
+        for (int i = 0; i < generators.size(); i++) {
+            final var generator = generators.get(i);
+            final var slot = Slot.fromIndex(i);
+            final var item = createGeneratorItem(generator, gameConfig, main, slot, generatorsPane, i);
+            generatorsPane.addItem(item, slot);
+        }
+
+        // add base controls
+        controlsPane.addItem(baseGuiControlsService.createBackButton(evt -> main.show(evt.getWhoClicked())),
+                Slot.fromIndex(0));
+        controlsPane.addItem(baseGuiControlsService.createAddButton(evt -> {
+            gameConfig.getGenerators().add(new GameGeneratorConfig());
+            gameConfig.save();
+
+            final var gui = createGeneratorsConfigGui(
+                    main, gameConfig);
+            gui.show(evt.getWhoClicked());
+        }), Slot.fromIndex(8));
+
+        chestGui.addPane(decoPane);
+        chestGui.addPane(generatorsPane);
+        chestGui.addPane(controlsPane);
+
+        return chestGui;
+    }
+
+    private @NotNull ChestGui createGeneratorConfigGui(@NotNull ChestGui parent,
+                                                       @NotNull GameConfig gameConfig,
+                                                       @NotNull GameGeneratorConfig generatorConfig,
+                                                       @NotNull Slot slot,
+                                                       @NotNull StaticPane pane,
+                                                       int generatorIndex) {
+        final var rows = 3;
+        final var chestGui = new ChestGui(rows, ComponentHolder.of(chatService.format(
+                "<accent><b>→</b> <base>Generator #" + generatorIndex + " Editor", Colors.FUCHSIA
+        )));
+        final var configItemPane = new StaticPane(1, 1, 7, rows - 2);
+        final var controlsPane = new StaticPane(0, rows - 1, 9, 1);
+        final var decoPane = baseGuiControlsService.createBaseBorderPane(rows);
+
+        configItemPane.addItem(baseGuiControlsService.createLocationInputControl(
+                "Move to the generator location, then <base>right click the emerald<text>!",
+                new IBaseGuiControlsService.InputControlData<>(
+                        Material.COMPASS,
+                        null, generatorConfig.getGeneratorLocation(),
+                        "Generator Location",
+                        List.of("The location where the generator will be placed", "in the game. Try planning a little", "upper the actual generator."),
+                        (location, inputData) -> {
+                            inputData.setCurrentValue(location);
+                            generatorConfig.setGeneratorLocation(location);
+                            gameConfig.save();
+                        }
+                )
+        ), Slot.fromIndex(0));
+
+        configItemPane.addItem(baseGuiControlsService.createComboBoxInputControl(GameGeneratorType.CONFIGURABLE_TYPES,
+                new IBaseGuiControlsService.InputControlData<>(
+                        Material.BRICK,
+                        GameGeneratorType.DIAMOND, generatorConfig.getGeneratorType(),
+                        "Generator Type",
+                        List.of("The type of generator", "to be used in the game."),
+                        (genType, inputData) -> {
+                            inputData.setCurrentValue(genType);
+                            generatorConfig.setGeneratorType(genType);
+                            gameConfig.save();
+
+                            final var newItem = createGeneratorItem(generatorConfig, gameConfig, parent, slot, pane, generatorIndex - 1);
+                            pane.removeItem(slot);
+                            pane.addItem(newItem, slot);
+
+                            parent.update();
+                        }
+                ), genType -> switch (genType) {
+                    case BASE -> "Base (Iron/Gold)";
+                    case DIAMOND -> "Diamond";
+                    case EMERALD -> "Emerald";
+                    case AMETHYST -> "Amethyst";
+                }), Slot.fromIndex(1));
+
+        // add base controls
+        controlsPane.addItem(baseGuiControlsService.createBackButton(evt -> parent.show(evt.getWhoClicked())),
                 Slot.fromIndex(0));
 
         chestGui.addPane(decoPane);
