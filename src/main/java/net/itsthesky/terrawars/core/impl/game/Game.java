@@ -15,6 +15,7 @@ import net.itsthesky.terrawars.api.services.IChatService;
 import net.itsthesky.terrawars.api.services.base.IServiceProvider;
 import net.itsthesky.terrawars.api.services.base.Inject;
 import net.itsthesky.terrawars.core.config.GameConfig;
+import net.itsthesky.terrawars.core.config.GameTeamConfig;
 import net.itsthesky.terrawars.core.events.game.GameStateChangeEvent;
 import net.itsthesky.terrawars.util.BukkitUtils;
 import net.itsthesky.terrawars.util.Checks;
@@ -153,7 +154,7 @@ public class Game implements IGame {
                 "<base>" + player.getName() + "<text> joined the game. <accent>[<text>" + waitingPlayers.size() + "<accent>/<text>" + maxPlayers + "<accent>]");
 
         // TODO: remove this so it actually only starts when there's enough players :)
-        if (waitingPlayers.size() >= maxPlayers || true)
+        if (waitingPlayers.size() >= maxPlayers)
             setState(GameState.STARTING);
         return true;
     }
@@ -303,7 +304,13 @@ public class Game implements IGame {
         }
 
         this.teams.clear();
-        for (final var cfg : config.getTeams()) {
+        List<GameTeamConfig> teamConfigs = new ArrayList<GameTeamConfig>();
+        if (waitingPlayers.size() < 4) // we don't have enough players, so we will just setup the right amount of team
+            teamConfigs = config.getTeams().subList(0, waitingPlayers.size());
+        else
+            teamConfigs = config.getTeams();
+
+        for (final var cfg : teamConfigs) {
             final var team = new GameTeam(cfg, this);
             teams.add(team);
         }

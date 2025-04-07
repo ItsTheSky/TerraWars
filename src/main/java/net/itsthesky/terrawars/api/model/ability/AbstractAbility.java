@@ -108,6 +108,10 @@ public abstract class AbstractAbility implements IAbility {
             }
         }
 
+        lore.add("");
+        for (String line : getDescription())
+            lore.add("<text><i>" + line);
+
         final var builder = new ItemBuilder(material)
                 .cleanLore()
                 .noMovement()

@@ -161,6 +161,8 @@ public class GamePlayer implements IGamePlayer {
             final var slot = entry.getKey();
 
             final var builder = new ItemBuilder(armor)
+                    .cleanLore()
+                    .unbreakable()
                     .noMovement();
 
             if ((slot != EquipmentSlot.LEGS && slot != EquipmentSlot.FEET)

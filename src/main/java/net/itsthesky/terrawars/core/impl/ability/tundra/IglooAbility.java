@@ -30,13 +30,13 @@ public class IglooAbility extends ActiveAbility {
     private static final int IGLOO_HEIGHT = 3;
     private static final int IGLOO_DURATION_SECONDS = 10;
     private static final int REGEN_AMOUNT = 4;
-    private static final double EXPULSION_FORCE = 1.5;
+    private static final double EXPULSION_FORCE = 3;
     private static final Material IGLOO_BLOCK = Material.ICE;
 
     private final Map<UUID, IglooData> playerIgloos = new HashMap<>();
 
     public IglooAbility() {
-        super("tundra_igloo", Material.ICE, "Igloo Bunker",
+        super("tundra_igloo", Material.PACKED_ICE, "Igloo Bunker",
                 List.of(
                         "Create a temporary 3x3x3 ice dome around you,",
                         "while expelling enemies out. Will heal you for",
@@ -72,6 +72,15 @@ public class IglooAbility extends ActiveAbility {
             cleanupExistingIgloo(playerId);
         }
 
+        if (!hasEnoughSpace(center)) {
+            game.getChatService().sendMessage(player, IChatService.MessageSeverity.ERROR,
+                    "You cannot create an igloo here, not enough space!");
+            return false;
+        }
+
+        // Expel enemies from the igloo
+        expelEnemies(center, gamePlayer, team);
+
         // Create the igloo structure
         final var iglooBlocks = createIgloo(center);
         if (iglooBlocks.isEmpty()) {
@@ -82,9 +91,6 @@ public class IglooAbility extends ActiveAbility {
 
         // Play creation sound and visual effects
         player.getWorld().playSound(center, Sound.BLOCK_GLASS_PLACE, 1.0f, 0.7f);
-
-        // Expel enemies from the igloo
-        expelEnemies(center, gamePlayer, team);
 
         final var regenTask = scheduleHealthRegeneration(center, gamePlayer, team);
         final var removalTask = scheduleIglooRemoval(playerId, iglooBlocks, regenTask);
@@ -175,9 +181,8 @@ public class IglooAbility extends ActiveAbility {
                     entity.setVelocity(velocity);
 
                     // Play effect on the entity
-                    if (entity instanceof Player) {
+                    if (entity instanceof Player)
                         entity.getWorld().playSound(entity.getLocation(), Sound.BLOCK_SNOW_BREAK, 1.0f, 0.5f);
-                    }
                 }
             }
         }

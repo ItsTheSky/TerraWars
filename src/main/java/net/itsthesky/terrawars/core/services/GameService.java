@@ -16,6 +16,7 @@ import net.itsthesky.terrawars.core.impl.ability.tundra.IglooAbility;
 import net.itsthesky.terrawars.core.impl.game.Game;
 import net.itsthesky.terrawars.util.Checks;
 import net.itsthesky.terrawars.util.Colors;
+import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -122,7 +123,8 @@ public class GameService implements IGameService, IService {
                 .withSubcommand(new CommandAPICommand("sample_game")
                         .executesPlayer((player, args) -> {
                             final var game = createGame(configService.load(GameConfig.class, "games" + File.separator + "sample_game.json"));
-                            game.tryAddPlayer(player);
+                            for (final var otherPlayer : Bukkit.getOnlinePlayers())
+                                game.tryAddPlayer(otherPlayer);
                             ((Game) game).setupStartedGame();
                         }))
                 .withSubcommand(new CommandAPICommand("shop")
