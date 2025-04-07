@@ -1,5 +1,6 @@
 package net.itsthesky.terrawars.core.impl.game;
 
+import com.github.stefvanschie.inventoryframework.util.UUIDTagType;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import lombok.Getter;
 import net.itsthesky.terrawars.TerraWars;
@@ -31,6 +32,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.ItemMergeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
@@ -464,7 +466,20 @@ public class Game implements IGame {
             }
         }
 
+        // Prevent items from generators to stacks
+        @EventHandler(priority = EventPriority.HIGH)
+        public void onItemStack(@NotNull ItemMergeEvent event) {
+            final var entity = event.getEntity();
+            if (!entity.getPersistentDataContainer().has(Keys.GENERATOR_ITEM_KEY, UUIDTagType.INSTANCE))
+                return;
+
+            event.setCancelled(true);
+        }
     }
 
     //endregion
+
+    public <T> T getService(Class<T> serviceClass) {
+        return serviceProvider.getService(serviceClass);
+    }
 }

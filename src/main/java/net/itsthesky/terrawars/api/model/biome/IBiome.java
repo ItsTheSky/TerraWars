@@ -23,4 +23,6 @@ public interface IBiome {
 
     @NotNull Material getMainBlock();
 
+    @NotNull Material getWoolBlock();
+
 }

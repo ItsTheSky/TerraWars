@@ -1,11 +1,14 @@
 package net.itsthesky.terrawars.util;
 
 import net.itsthesky.terrawars.TerraWars;
+import net.itsthesky.terrawars.api.services.IChatService;
 import net.itsthesky.terrawars.core.impl.game.Game;
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
@@ -104,5 +107,22 @@ public final class BukkitUtils {
 
         consumer.accept(pdc);
         chunk.getPersistentDataContainer().set(key, PersistentDataType.TAG_CONTAINER, pdc);
+    }
+
+    public static IChatService chat() {
+        return TerraWars.instance().serviceProvider().getService(IChatService.class);
+    }
+
+    public static void playSound(@NotNull Audience audience, @NotNull Sound sound, int volume, int pitch) {
+        Checks.notNull(audience, "Audience cannot be null");
+        Checks.notNull(sound, "Sound cannot be null");
+
+        final var advSound = net.kyori.adventure.sound.Sound.sound()
+                .pitch(pitch)
+                .source(net.kyori.adventure.sound.Sound.Source.MASTER)
+                .volume(volume)
+                .type(sound);
+
+        audience.playSound(advSound.build());
     }
 }

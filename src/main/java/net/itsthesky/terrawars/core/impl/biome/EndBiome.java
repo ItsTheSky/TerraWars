@@ -16,7 +16,7 @@ public class EndBiome extends AbstractBiome {
                         "The <base>End<text> biome is a mysterious biome,",
                         "characterized by its floating islands and",
                         "unique flora and fauna."
-                ), Material.END_STONE);
+                ), Material.END_STONE, Material.PURPLE_WOOL);
     }
 
 }

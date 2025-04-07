@@ -41,5 +41,32 @@ public final class Keys {
      */
     public static final NamespacedKey GAME_PLACED_BLOCK_KEY = new NamespacedKey(NAMESPACE, "game_placed_block");
 
+    /**
+     * Key used to identify an item as a bought item from the shop.
+     * <br>
+     * Will holds a {@link org.bukkit.persistence.PersistentDataType#STRING string} value, representing the item's ID.
+     */
+    public static final NamespacedKey SHOP_ITEM_KEY = new NamespacedKey(NAMESPACE, "shop_item");
+
+    /**
+     * Key used to know if a specific item is coming from a {@link net.itsthesky.terrawars.core.impl.game.GameGenerator generator}.
+     * <br>
+     * Will holds a {@link UUIDTagType UUID} value, representing the generator's ID.
+     * <br>
+     * <b>WARNING: This key is applied on an {@link org.bukkit.entity.Item item entity}, not an {@link org.bukkit.inventory.ItemStack item stack}!</b>
+     */
+    public static final NamespacedKey GENERATOR_ITEM_KEY = new NamespacedKey(NAMESPACE, "generator_item");
+
+    //endregion
+
+    //region Player-specific keys
+
+    /**
+     * Key used to indicate at what level a player's armor is in the game.
+     * <br>
+     * Will holds a {@link org.bukkit.persistence.PersistentDataType#INTEGER integer}, representing the index of the {@link net.itsthesky.terrawars.api.model.shop.ArmorLevel armor level}.
+     */
+    public static final NamespacedKey ARMOR_LEVEL_KEY = new NamespacedKey(NAMESPACE, "armor_level");
+
     //endregion
 }

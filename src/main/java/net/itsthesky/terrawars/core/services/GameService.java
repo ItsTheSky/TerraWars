@@ -11,6 +11,7 @@ import net.itsthesky.terrawars.api.services.base.Inject;
 import net.itsthesky.terrawars.api.services.base.Service;
 import net.itsthesky.terrawars.core.config.GameConfig;
 import net.itsthesky.terrawars.core.config.GameTeamConfig;
+import net.itsthesky.terrawars.core.gui.ShopKeeperGui;
 import net.itsthesky.terrawars.core.impl.ability.tundra.IglooAbility;
 import net.itsthesky.terrawars.core.impl.game.Game;
 import net.itsthesky.terrawars.util.Checks;
@@ -118,11 +119,28 @@ public class GameService implements IGameService, IService {
                                 }
                             }
                         }))
-                .withSubcommand(new CommandAPICommand("smaple_game")
+                .withSubcommand(new CommandAPICommand("sample_game")
                         .executesPlayer((player, args) -> {
                             final var game = createGame(configService.load(GameConfig.class, "games" + File.separator + "sample_game.json"));
                             game.tryAddPlayer(player);
                             ((Game) game).setupStartedGame();
+                        }))
+                .withSubcommand(new CommandAPICommand("shop")
+                        .executesPlayer((player, args) -> {
+                            final var game = getPlayerGame(player.getUniqueId());
+                            if (game == null) {
+                                chatService.sendMessage(player, IChatService.MessageSeverity.ERROR, "You are not in a game!");
+                                return;
+                            }
+
+                            if (game.getState() != IGame.GameState.RUNNING) {
+                                chatService.sendMessage(player, IChatService.MessageSeverity.ERROR, "You can only select an ability in a running game!");
+                                return;
+                            }
+
+                            final var gamePlayer = game.findGamePlayer(player);
+                            final var gui = new ShopKeeperGui(game, gamePlayer);
+                            gui.show(player);
                         }))
                 .withSubcommand(new CommandAPICommand("join")
                         .withArguments(List.of(new StringArgument("game_id")))

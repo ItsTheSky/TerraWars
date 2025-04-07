@@ -17,7 +17,7 @@ public class TundraBiome extends AbstractBiome {
                         "The <base>Tundra<text> is a cold biome,",
                         "characterized by its low temperatures",
                         "and limited vegetation."
-                ), Material.ICE);
+                ), Material.ICE, Material.CYAN_WOOL);
     }
 
 }

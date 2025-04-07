@@ -17,6 +17,7 @@ public class LocationAdapter extends TypeAdapter<Location> {
             out.nullValue();
             return;
         }
+        location = location.toCenterLocation();
 
         out.beginObject();
         out.name("world").value(location.getWorld().getName());
@@ -68,6 +69,7 @@ public class LocationAdapter extends TypeAdapter<Location> {
         }
         in.endObject();
 
-        return new Location(Bukkit.getWorld(world), x, y, z, (float) yaw, (float) pitch);
+        return new Location(Bukkit.getWorld(world), x, y, z, (float) yaw, (float) pitch)
+                .toCenterLocation();
     }
 }

@@ -16,7 +16,7 @@ public class MushroomBiome extends AbstractBiome {
                         "The <base>Mushroom<text> biome is a unique biome,",
                         "characterized by its large mushrooms and",
                         "vibrant colors."
-                ), Material.RED_MUSHROOM_BLOCK);
+                ), Material.RED_MUSHROOM_BLOCK, Material.RED_WOOL);
     }
 
 }

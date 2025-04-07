@@ -6,14 +6,17 @@ import net.itsthesky.terrawars.api.model.ability.IAbility;
 import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.model.game.IGamePlayer;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
+import net.itsthesky.terrawars.api.model.shop.ArmorLevel;
 import net.itsthesky.terrawars.api.services.IChatService;
 import net.itsthesky.terrawars.util.Checks;
 import net.itsthesky.terrawars.util.Colors;
 import net.itsthesky.terrawars.util.ItemBuilder;
+import net.itsthesky.terrawars.util.Keys;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,6 +29,7 @@ public class GamePlayer implements IGamePlayer {
     private final OfflinePlayer offlinePlayer;
     private final Game game;
 
+    private ArmorLevel armorLevel = ArmorLevel.LEATHER;
     private GamePlayerState state;
     private @Nullable IGameTeam team;
 
@@ -116,7 +120,7 @@ public class GamePlayer implements IGamePlayer {
         }
 
         setupHotbar(true);
-        refreshArmor();
+        setArmorLevel(ArmorLevel.LEATHER);
     }
 
     @Override
@@ -130,20 +134,44 @@ public class GamePlayer implements IGamePlayer {
         final Map<EquipmentSlot, Material> armors = Map.of(
                 EquipmentSlot.HEAD, Material.LEATHER_HELMET,
                 EquipmentSlot.CHEST, Material.LEATHER_CHESTPLATE,
-                EquipmentSlot.LEGS, Material.LEATHER_LEGGINGS,
-                EquipmentSlot.FEET, Material.LEATHER_BOOTS
+                EquipmentSlot.LEGS, this.armorLevel.getLeggings(),
+                EquipmentSlot.FEET, this.armorLevel.getBoots()
         );
 
         for (Map.Entry<EquipmentSlot, Material> entry : armors.entrySet()) {
             final var armor = entry.getValue();
             final var slot = entry.getKey();
 
-            final var item = new ItemBuilder(armor)
-                    .withLeatherArmorColor(color)
-                    .noMovement()
-                    .getItem();
+            final var builder = new ItemBuilder(armor)
+                    .noMovement();
 
-            getPlayer().getInventory().setItem(slot, item);
+            if ((slot != EquipmentSlot.LEGS && slot != EquipmentSlot.FEET)
+                    || this.armorLevel.equals(ArmorLevel.LEATHER))
+                builder.withLeatherArmorColor(color);
+
+            getPlayer().getInventory().setItem(slot, builder.getItem());
         }
+    }
+
+    @Override
+    public void setArmorLevel(@NotNull ArmorLevel level) {
+        Checks.notNull(level, "Armor level cannot be null");
+        Checks.notNull(this.team, "Player is not in a team (game hasn't started yet)");
+
+        this.getPlayer().getPersistentDataContainer().set(Keys.ARMOR_LEVEL_KEY, PersistentDataType.INTEGER, level.ordinal());
+        this.armorLevel = level;
+        refreshArmor();
+    }
+
+    @Override
+    public @NotNull ArmorLevel getArmorLevel() {
+        if (this.armorLevel == null) {
+            final var level = this.getPlayer().getPersistentDataContainer().get(Keys.ARMOR_LEVEL_KEY, PersistentDataType.INTEGER);
+            if (level == null)
+                return ArmorLevel.LEATHER;
+            return ArmorLevel.values()[level];
+        }
+
+        return this.armorLevel;
     }
 }

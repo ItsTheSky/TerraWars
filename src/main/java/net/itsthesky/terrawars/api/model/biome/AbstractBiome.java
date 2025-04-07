@@ -19,5 +19,6 @@ public class AbstractBiome implements IBiome {
     private final TextColor color;
     private final List<String> description;
     private final Material mainBlock;
+    private final Material woolBlock;
 
 }

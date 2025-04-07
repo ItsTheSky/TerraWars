@@ -17,7 +17,7 @@ public class BadlandsBiome extends AbstractBiome {
                         "The <base>Badlands<text> biome is a dry biome,",
                         "characterized by its arid climate and",
                         "rocky terrain."
-                ), Material.RED_SANDSTONE);
+                ), Material.RED_SANDSTONE, Material.BROWN_WOOL);
     }
 
 }

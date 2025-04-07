@@ -54,6 +54,10 @@ public class ItemBuilder {
         this.item = item;
     }
 
+    public static @NotNull ItemStack createEmpty() {
+        return new ItemStack(Material.AIR);
+    }
+
     public ItemBuilder name(String name, List<TextColor> scheme) {
         return name(chatService.format(name, scheme));
     }
@@ -133,7 +137,9 @@ public class ItemBuilder {
     }
 
     public ItemBuilder cleanLore() {
-        return flags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_UNBREAKABLE);
+        return flags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_UNBREAKABLE,
+                ItemFlag.HIDE_DESTROYS, ItemFlag.HIDE_PLACED_ON, ItemFlag.HIDE_ATTRIBUTES,
+                ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_DYE, ItemFlag.HIDE_STORED_ENCHANTS);
     }
 
     public ItemBuilder unbreakable() {

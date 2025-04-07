@@ -1,6 +1,7 @@
 package net.itsthesky.terrawars.api.model.game;
 
 import net.itsthesky.terrawars.api.model.ability.IAbility;
+import net.itsthesky.terrawars.api.model.shop.ArmorLevel;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -130,4 +131,18 @@ public interface IGamePlayer extends IGameHolder {
     default void refreshHotbar() {
         setupHotbar(false);
     }
+
+    /**
+     * Change the player's armor level. This will then call {@link #refreshArmor()} so
+     * its actual armor is changed.
+     * @param level the new armor level
+     * @see #refreshArmor()
+     */
+    void setArmorLevel(@NotNull ArmorLevel level);
+
+    /**
+     * Get the armor level of this player.
+     * @return the armor level of this player
+     */
+    @NotNull ArmorLevel getArmorLevel();
 }
