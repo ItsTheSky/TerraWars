@@ -193,7 +193,7 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
         ), Slot.fromIndex(0));
 
         configItemPane.addItem(baseGuiControlsService.createLocationInputControl(
-                "Move to the nexus location, then <base>right click the emerald<text> (you may click on a <accent>block<text> too)!",
+                "Move to the location, then <base>right click the emerald<text> (you may click on a <accent>block<text> too)!",
                 new IBaseGuiControlsService.InputControlData<>(
                         Material.END_CRYSTAL,
                         null, teamConfig.getNexusLocation(),
@@ -208,7 +208,7 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
         ), Slot.fromIndex(1));
 
         configItemPane.addItem(baseGuiControlsService.createLocationInputControl(
-                "Move to the nexus location, then <base>right click the emerald<text>!",
+                "Move to the location, then <base>right click the emerald<text>!",
                 new IBaseGuiControlsService.InputControlData<>(
                         Material.IRON_BLOCK,
                         null, teamConfig.getGeneratorLocation(),
@@ -247,6 +247,36 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
                     gameConfig.save();
                 }
         )), Slot.fromIndex(3));
+
+        configItemPane.addItem(baseGuiControlsService.createLocationInputControl(
+                "Move to the location, then <base>right click the emerald<text>!",
+                new IBaseGuiControlsService.InputControlData<>(
+                        Material.GOLD_INGOT,
+                        null, teamConfig.getShopkeeperLocation(),
+                        "Shopkeeper Location",
+                        List.of("The location where the shopkeeper will be placed", "in the game."),
+                        (location, inputData) -> {
+                            inputData.setCurrentValue(location);
+                            teamConfig.setShopkeeperLocation(location);
+                            gameConfig.save();
+                        }
+                )
+        ), Slot.fromIndex(4));
+
+        configItemPane.addItem(baseGuiControlsService.createLocationInputControl(
+                "Move to the location, then <base>right click the emerald<text>!",
+                new IBaseGuiControlsService.InputControlData<>(
+                        Material.DIAMOND,
+                        null, teamConfig.getShopkeeperLocation(),
+                        "Upgrades Shop Location",
+                        List.of("The location where the upgrades shop will be placed", "in the game."),
+                        (location, inputData) -> {
+                            inputData.setCurrentValue(location);
+                            teamConfig.setUpgradesLocation(location);
+                            gameConfig.save();
+                        }
+                )
+        ), Slot.fromIndex(5));
 
         // add base controls
         controlsPane.addItem(baseGuiControlsService.createBackButton(evt -> main.show(evt.getWhoClicked())),

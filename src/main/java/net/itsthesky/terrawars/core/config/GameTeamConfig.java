@@ -26,6 +26,14 @@ public class GameTeamConfig {
     @SerializedName("generator_location")
     private Location generatorLocation;
 
+    @JsonAdapter(LocationAdapter.class)
+    @SerializedName("shopkeeper_location")
+    private Location shopkeeperLocation;
+
+    @JsonAdapter(LocationAdapter.class)
+    @SerializedName("upgrades_location")
+    private Location upgradesLocation;
+
     @SerializedName("biome_id")
     private String biomeId;
 

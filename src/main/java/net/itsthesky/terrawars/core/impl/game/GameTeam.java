@@ -22,6 +22,7 @@ public class GameTeam implements IGameTeam {
     private final UUID id;
     private final GameTeamConfig config;
     private final Map<UUID, GamePlayer> players;
+    private final List<GameShopEntity> shopEntities;
     private final Game game;
     private final IBiome biome;
     private final GameNexus nexus;
@@ -35,6 +36,10 @@ public class GameTeam implements IGameTeam {
         this.spawnLocation = config.getSpawnLocation();
         this.biome = game.getBiomeService().getBiome(config.getBiomeId());
         this.nexus = new GameNexus(this);
+
+        this.shopEntities = new ArrayList<>();
+        this.shopEntities.add(new GameShopEntity(this, GameShopEntity.ShopEntityType.SHOPKEEPER));
+        this.shopEntities.add(new GameShopEntity(this, GameShopEntity.ShopEntityType.UPGRADES));
     }
 
     @Override
@@ -70,5 +75,6 @@ public class GameTeam implements IGameTeam {
     public void cleanup() {
         this.nexus.cleanup();
         for (GamePlayer player : players.values()) player.cleanup();
+        for (GameShopEntity shopEntity : shopEntities) shopEntity.cleanup();
     }
 }

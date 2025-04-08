@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.itsthesky.terrawars.api.model.ability.IAbility;
 import net.kyori.adventure.text.format.TextColor;
+import net.minecraft.world.entity.npc.VillagerType;
 import org.bukkit.Material;
 
 import java.util.List;
@@ -20,5 +21,6 @@ public class AbstractBiome implements IBiome {
     private final List<String> description;
     private final Material mainBlock;
     private final Material woolBlock;
+    private final VillagerType villagerType;
 
 }

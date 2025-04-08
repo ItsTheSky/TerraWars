@@ -13,7 +13,7 @@ public abstract class ActiveAbility extends AbstractAbility {
     }
 
     public boolean use(IGamePlayer player, @NotNull IGame game) {
-        if (isOnCooldown(player))
+        if (isOnCooldown(player) && !shouldIgnoreCooldown(player))
             return false;
         
         if (execute(player, game)) {
@@ -25,4 +25,8 @@ public abstract class ActiveAbility extends AbstractAbility {
     }
     
     protected abstract boolean execute(@NotNull IGamePlayer player, @NotNull IGame game);
+
+    public boolean shouldIgnoreCooldown(@NotNull IGamePlayer player) {
+        return false;
+    }
 }

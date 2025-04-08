@@ -1,4 +1,4 @@
-package net.itsthesky.terrawars.core.impl.ability.mushroom;
+package net.itsthesky.terrawars.core.impl.ability.badlands;
 
 import net.itsthesky.terrawars.api.model.ability.ActiveAbility;
 import net.itsthesky.terrawars.api.model.game.IGame;
