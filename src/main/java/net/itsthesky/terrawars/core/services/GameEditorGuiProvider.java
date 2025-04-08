@@ -109,6 +109,19 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
                     case SQUAD -> "Squad (4v4v4v4)";
                 }), Slot.fromIndex(2));
 
+        pane.addItem(baseGuiControlsService.createNumericInputControl("Enter the amount of seconds before respawn in the chat, or <base>cancel <text>to cancel.",
+                new IBaseGuiControlsService.InputControlData<>(
+                        Material.CLOCK,
+                        5, config.getDeathCooldown(),
+                        "Respawn Cooldown",
+                        List.of("The amount of seconds before respawn", "in the game."),
+                        (cooldown, inputData) -> {
+                            inputData.setCurrentValue(cooldown);
+                            config.setDeathCooldown(cooldown);
+                            config.save();
+                        }
+                )), Slot.fromIndex(3));
+
         pane.addItem(baseGuiControlsService.createSubMenuInputControl(
                 "Configure Generators",
                 List.of("Edit the generators configuration", "for the game."),
@@ -119,7 +132,7 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
                             config);
                     generatorGui.show(evt.getWhoClicked());
                 }
-        ), Slot.fromIndex(3));
+        ), Slot.fromIndex(4));
     }
 
     private void populateTeamConfigItemPane(@NotNull final StaticPane pane, @NotNull final GameConfig config) {

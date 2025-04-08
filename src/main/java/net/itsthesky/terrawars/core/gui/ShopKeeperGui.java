@@ -3,11 +3,11 @@ package net.itsthesky.terrawars.core.gui;
 import com.github.stefvanschie.inventoryframework.adventuresupport.ComponentHolder;
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
-import com.github.stefvanschie.inventoryframework.gui.type.util.Gui;
 import com.github.stefvanschie.inventoryframework.pane.PaginatedPane;
 import com.github.stefvanschie.inventoryframework.pane.Pane;
 import com.github.stefvanschie.inventoryframework.pane.StaticPane;
 import com.github.stefvanschie.inventoryframework.pane.util.Slot;
+import net.itsthesky.terrawars.api.model.ability.AbilityType;
 import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.model.game.IGamePlayer;
 import net.itsthesky.terrawars.api.model.shop.ShopCategory;
@@ -24,6 +24,7 @@ import net.itsthesky.terrawars.util.BukkitUtils;
 import net.itsthesky.terrawars.util.Colors;
 import net.itsthesky.terrawars.util.ItemBuilder;
 import net.itsthesky.terrawars.util.Keys;
+import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -34,6 +35,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ShopKeeperGui extends ChestGui {
+
+    private static final ShopCategory ABILITY_CATEGORY =
+            new ShopCategory("Abilities", new ItemStack(Material.FEATHER), null);
 
     @Inject
     private IBaseGuiControlsService baseGuiControlsService;
@@ -72,7 +76,10 @@ public class ShopKeeperGui extends ChestGui {
             this.categoryItems.put(category, item);
 
             categoriesPane.addItem(new GuiItem(item.getItem(),
-                    evt -> setCategory(category)),
+                            evt -> {
+                                evt.setCancelled(true);
+                                setCategory(category);
+                            }),
                     Slot.fromIndex(index));
 
             final var pane = createCategoryPane(category);
@@ -81,6 +88,17 @@ public class ShopKeeperGui extends ChestGui {
             categoryPages.put(category, index);
             index++;
         }
+
+        // Add the ability category
+        this.categoryItems.put(ABILITY_CATEGORY, createCategoryItem(ABILITY_CATEGORY));
+        this.categoryPages.put(ABILITY_CATEGORY, index);
+        categoriesPane.addItem(new GuiItem(this.categoryItems.get(ABILITY_CATEGORY).getItem(),
+                        evt -> {
+                            evt.setCancelled(true);
+                            setCategory(ABILITY_CATEGORY);
+                        }),
+                Slot.fromIndex(index));
+        this.contentPane.addPage(createAbilityPane());
 
         setCategory(ShopCategories.CATEGORIES.getFirst());
     }
@@ -215,6 +233,70 @@ public class ShopKeeperGui extends ChestGui {
                 return false;
         }
         return true;
+    }
+
+    private @NotNull StaticPane createAbilityPane() {
+        final var staticPane = new StaticPane(Slot.fromXY(0, 0), 7, 4);
+        int slotIndex = 0;
+
+        for (final var ability : player.getTeam().getBiome().getAvailableAbilities()) {
+            final var slot = Slot.fromIndex(slotIndex);
+
+            final var lore = new ArrayList<String>();
+            if (ability.getType().equals(AbilityType.PASSIVE))
+                lore.add("<shade-violet:700><b>▷</b> <shade-violet:900>PASSIVE ABILITY");
+            else
+                lore.add("<shade-indigo:700><b>▷</b> <shade-indigo:900>ACTIVE ABILITY");
+
+            lore.add("");
+            for (final var line : ability.getDescription())
+                lore.add("<text><i>" + line);
+            lore.add("");
+            if (ability.getType().equals(AbilityType.ACTIVE)) {
+                lore.add("<accent><b>⌚</b> <base>Cooldown: " + ability.getCooldownSeconds() + "s");
+                lore.add("");
+            }
+
+            if (ability.equals(this.player.getSelectedAbility())) {
+                lore.add("<shade-lime:500><b>✔</b> <shade-lime:300>You have this ability!");
+            } else {
+                lore.add("<shade-yellow:500><b>✔</b> <shade-yellow:300>Click to select this ability!");
+            }
+
+            final var builder = new ItemBuilder(ability.getIcon())
+                    .name(ability.getDisplayName(), Colors.EMERALD)
+                    .lore(Colors.EMERALD, lore);
+            if (this.player.getSelectedAbility() != null && this.player.getSelectedAbility().equals(ability))
+                builder.glow();
+
+            staticPane.addItem(new GuiItem(builder.getItem(), evt -> {
+                evt.setCancelled(true);
+                if (ability.equals(this.player.getSelectedAbility())) {
+                    chatService.sendMessage(player.getPlayer(), IChatService.MessageSeverity.ERROR,
+                            "You already have this ability!");
+                    BukkitUtils.playSound(player.getPlayer(), Sound.BLOCK_NOTE_BLOCK_BASS, 1, 1);
+                    return;
+                }
+
+                chatService.sendMessage(player.getPlayer(), IChatService.MessageSeverity.SUCCESS,
+                        "You selected the ability " + ability.getDisplayName() + "!");
+                player.setSelectedAbility(ability);
+                BukkitUtils.playSound(player.getPlayer(), Sound.ITEM_ARMOR_EQUIP_WOLF, 1, 1);
+
+                final var gui = new ShopKeeperGui(game, player);
+                gui.setCategory(ABILITY_CATEGORY);
+                gui.show(player.getPlayer());
+            }), slot);
+
+            slotIndex++;
+        }
+
+        for (int i = slotIndex; i < 6 * 4; i++) {
+            final var slot = Slot.fromIndex(i);
+            staticPane.addItem(new GuiItem(ItemBuilder.createEmpty()), slot);
+        }
+
+        return staticPane;
     }
 
 }

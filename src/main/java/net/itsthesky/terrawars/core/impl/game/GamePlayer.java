@@ -16,7 +16,8 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
@@ -24,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter @Setter
 public class GamePlayer implements IGamePlayer {
@@ -31,13 +33,15 @@ public class GamePlayer implements IGamePlayer {
     private final OfflinePlayer offlinePlayer;
     private final Game game;
     private final GamePlayerListener listener;
-    private @Nullable IGameTeam team;
+    private IGameTeam team;
 
     private ArmorLevel armorLevel = ArmorLevel.LEATHER;
     private GamePlayerState state;
 
+    private boolean isRespawning = false;
     private @Nullable IAbility selectedAbility;
     private BukkitTask updatePlayerTask;
+    private BukkitTask respawnTask;
 
     public GamePlayer(OfflinePlayer player, Game game) {
         this.offlinePlayer = player;
@@ -54,7 +58,7 @@ public class GamePlayer implements IGamePlayer {
 
 
     @Override
-    public @Nullable IGameTeam getTeam() throws IllegalStateException {
+    public @NotNull IGameTeam getTeam() throws IllegalStateException {
         if (team == null)
             throw new IllegalStateException("Game has not started yet, player is not in a team.");
 
@@ -95,6 +99,7 @@ public class GamePlayer implements IGamePlayer {
                 ((PassiveAbility) this.selectedAbility).registerListener(this, this.game);
 
             this.selectedAbility.onSelect(this);
+            this.selectedAbility.removeCooldown(this);
         }
 
         setupHotbar(false);
@@ -137,19 +142,16 @@ public class GamePlayer implements IGamePlayer {
         player.setSaturation(0);
 
         final var availableAbilities = this.team.getBiome().getAvailableAbilities();
-        if (availableAbilities.isEmpty()) {
-            game.getChatService().sendMessage(player, IChatService.MessageSeverity.WARNING, "No abilities available for this team.");
-        } else {
+        if (!availableAbilities.isEmpty()) {
             final var firstAbility = availableAbilities.get(0);
             setSelectedAbility(firstAbility);
-            game.getChatService().sendMessage(player, IChatService.MessageSeverity.SUCCESS,
-                    "Selected the <accent>" + firstAbility.getDisplayName() + "<text> ability!");
         }
 
         setupHotbar(true);
         setArmorLevel(ArmorLevel.LEATHER);
 
-        this.updatePlayerTask = createUpdatePlayerTask();
+        if (this.updatePlayerTask == null)
+            this.updatePlayerTask = createUpdatePlayerTask();
     }
 
     private static final Set<Material> MELEE_MATERIALS = Set.of(
@@ -187,7 +189,12 @@ public class GamePlayer implements IGamePlayer {
                     foundMeleeWeapons.contains(Material.WOODEN_SWORD)) {
                 player.getInventory().remove(Material.WOODEN_SWORD);
             }
-        }, 20, 20);
+
+            // Check if below Y is below 115
+            if (player.getLocation().getY() < 115) {
+                player.setHealth(0);
+            }
+        }, 0, 20);
     }
 
     @Override
@@ -258,6 +265,11 @@ public class GamePlayer implements IGamePlayer {
             this.updatePlayerTask = null;
         }
 
+        if (respawnTask != null) {
+            respawnTask.cancel();
+            respawnTask = null;
+        }
+
         if (this.listener != null)
             BukkitUtils.unregisterListener(this.listener);
     }
@@ -265,21 +277,70 @@ public class GamePlayer implements IGamePlayer {
     public class GamePlayerListener implements Listener {
 
         @EventHandler
-        public void onItemDrop(@NotNull PlayerDropItemEvent event) {
+        public void onItemRightClick(@NotNull PlayerInteractEvent event) {
             if (event.getPlayer() != offlinePlayer)
                 return;
+            if (!event.getAction().isRightClick())
+                return;
+            if (isRespawning)
+                return;
 
-            final var item = event.getItemDrop();
+            final var item = event.getItem();
             if (item == null || selectedAbility == null || !selectedAbility.getType().equals(AbilityType.ACTIVE))
                 return;
+
             final var ability = (ActiveAbility) selectedAbility;
 
-            if (item.getItemStack().getPersistentDataContainer().getOrDefault(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, false)) {
+            if (item.getPersistentDataContainer().getOrDefault(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, false)) {
                 ability.use(GamePlayer.this, game);
                 event.setCancelled(true);
-                item.remove();
             }
         }
 
+
+        @EventHandler
+        public void onPlayerDeath(@NotNull PlayerDeathEvent event) {
+            if (event.getEntity() != offlinePlayer)
+                return;
+            if (isRespawning)
+                return;
+            event.setCancelled(true);
+            getPlayer().setHealth(20);
+
+            final var player = event.getPlayer();
+            isRespawning = true;
+
+            event.setKeepInventory(true);
+            player.setGameMode(GameMode.SPECTATOR);
+            player.setAllowFlight(true);
+            player.setFlying(true);
+
+            player.teleport(game.getLobbyLocation());
+            player.getInventory().clear();
+
+            final var countdown = new AtomicInteger(game.getConfig().getDeathCooldown());
+            respawnTask = BukkitUtils.runTaskTimer(() -> {
+                final var remaining = countdown.getAndDecrement();
+                if (remaining <= 0) {
+                    player.setGameMode(GameMode.SURVIVAL);
+                    player.setAllowFlight(false);
+                    player.setFlying(false);
+                    player.getInventory().clear();
+                    player.teleport(team.getSpawnLocation());
+                    isRespawning = false;
+                    setup();
+
+                    respawnTask.cancel();
+                    respawnTask = null;
+                } else {
+                    game.getChatService().sendTitle(new IChatService.TitleBuilder()
+                            .audience(player)
+                            .title("<shade-red:600><b>You died!")
+                            .subtitle("<text>Respawning in <accent>" + remaining + "s")
+                            .scheme(Colors.ORANGE)
+                            .time(0,  1100, 0));
+                }
+            }, 5, 20);
+        }
     }
 }

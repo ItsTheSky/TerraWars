@@ -34,6 +34,9 @@ public class GameConfig {
     @SerializedName("generators")
     private List<GameGeneratorConfig> generators = new ArrayList<>();
 
+    @SerializedName("death_cooldown")
+    private int deathCooldown = 5;
+
     private transient Runnable saveRunnable;
     public void save() {
         if (saveRunnable != null)

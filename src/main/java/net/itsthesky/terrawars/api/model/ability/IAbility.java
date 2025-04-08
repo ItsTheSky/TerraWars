@@ -44,6 +44,8 @@ public interface IAbility {
 
     void startCooldown(IGamePlayer player);
 
+    void removeCooldown(IGamePlayer player);
+
     @NotNull ItemStack buildHotBarItem(IGamePlayer player);
 
     @NotNull ItemStack buildShopItem(Player player);

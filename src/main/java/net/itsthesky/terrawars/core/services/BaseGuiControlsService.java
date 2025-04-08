@@ -304,7 +304,8 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
                     item.lore(Colors.YELLOW, buildChatLore(inputData).toArray(new String[0]));
                     gui.update();
                 } catch (NumberFormatException e) {
-                    chatService.sendMessage(asyncChatEvent.getPlayer(), IChatService.MessageSeverity.ERROR, "Invalid input (must be a number).");
+                    chatService.sendMessage(asyncChatEvent.getPlayer(), IChatService.MessageSeverity.ERROR,
+                            "Invalid input (must be a number) for " + msg);
                 }
 
                 gui.show(asyncChatEvent.getPlayer());

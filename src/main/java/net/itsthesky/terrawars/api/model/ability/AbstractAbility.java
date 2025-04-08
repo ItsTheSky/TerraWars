@@ -91,6 +91,13 @@ public abstract class AbstractAbility implements IAbility {
     }
 
     @Override
+    public void removeCooldown(IGamePlayer player) {
+        UUID playerId = player.getPlayer().getUniqueId();
+        cooldowns.remove(playerId);
+        player.refreshHotbar();
+    }
+
+    @Override
     public @NotNull ItemStack buildHotBarItem(IGamePlayer player) {
         final var lore = new ArrayList<String>();
         final Material material;

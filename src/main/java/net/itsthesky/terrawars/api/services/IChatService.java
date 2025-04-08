@@ -129,6 +129,13 @@ public interface IChatService {
             return this;
         }
 
+        public TitleBuilder time(long fadeInMs, long stayMs, long fadeOutMs) {
+            this.fadeIn = Duration.ofMillis(fadeInMs);
+            this.stay = Duration.ofMillis(stayMs);
+            this.fadeOut = Duration.ofMillis(fadeOutMs);
+            return this;
+        }
+
         public boolean isValid() {
             return title != null && subtitle != null && audience != null;
         }

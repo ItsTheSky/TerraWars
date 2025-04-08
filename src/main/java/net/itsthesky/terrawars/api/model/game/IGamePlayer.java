@@ -63,7 +63,7 @@ public interface IGamePlayer extends IGameHolder {
      * @see IGamePlayer#getGame()
      * @see GamePlayerState#TEAM
      */
-    @Nullable IGameTeam getTeam() throws IllegalStateException;
+    @NotNull IGameTeam getTeam() throws IllegalStateException;
 
     void setTeam(@Nullable IGameTeam team) throws IllegalStateException;
 
