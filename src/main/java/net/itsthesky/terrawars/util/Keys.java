@@ -4,7 +4,7 @@ import com.github.stefvanschie.inventoryframework.util.UUIDTagType;
 import org.bukkit.NamespacedKey;
 
 /**
- * Constants for the {@link org.bukkit.NamespacedKey keys} used across TerraWars.
+ * Constants for the {@link NamespacedKey keys} used across TerraWars.
  */
 public final class Keys {
 

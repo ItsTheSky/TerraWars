@@ -36,12 +36,14 @@ public class GameShopEntity {
                 ? team.getConfig().getShopkeeperLocation()
                 : team.getConfig().getUpgradesLocation();
 
-        location.getWorld().spawn(location.clone().add(0, -0.25, 0), Villager.class, villager -> {
+        location.getWorld().spawn(location, Villager.class, villager -> {
             villager.setCustomNameVisible(true);
-            villager.setVillagerType(Villager.Type.PLAINS);
+            villager.setVillagerType(team.getBiome().getVillagerType());
             villager.setAI(false);
             villager.setCollidable(false);
             villager.setInvulnerable(true);
+            villager.setSilent(true);
+            villager.setGravity(true);
 
             if (type == ShopEntityType.SHOPKEEPER) {
                 villager.setProfession(Villager.Profession.LIBRARIAN);

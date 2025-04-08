@@ -7,6 +7,7 @@ import net.itsthesky.terrawars.core.impl.ability.badlands.GroundStrikeAbility;
 import net.itsthesky.terrawars.util.Colors;
 import net.minecraft.world.entity.npc.VillagerType;
 import org.bukkit.Material;
+import org.bukkit.entity.Villager;
 
 import java.util.List;
 
@@ -20,7 +21,7 @@ public class BadlandsBiome extends AbstractBiome {
                         "characterized by its arid climate and",
                         "rocky terrain."
                 ), Material.RED_SANDSTONE, Material.BROWN_WOOL,
-                VillagerType.SAVANNA);
+                Villager.Type.SAVANNA);
     }
 
 }

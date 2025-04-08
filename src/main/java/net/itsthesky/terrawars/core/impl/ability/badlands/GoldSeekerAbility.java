@@ -14,6 +14,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.UUID;
 
 public class GoldSeekerAbility extends PassiveAbility {
@@ -24,7 +25,7 @@ public class GoldSeekerAbility extends PassiveAbility {
 
     public GoldSeekerAbility() {
         super("badlands_gold_seeker", Material.GOLD_INGOT, "Gold Seeker",
-                java.util.List.of(
+                List.of(
                         "Reduce incoming damage based on gold",
                         "in your inventory: <shade-yellow:500>15%</shade-yellow> base +",
                         "<shade-yellow:500>2%</shade-yellow> per gold ingot (max 10 ingots).",

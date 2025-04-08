@@ -17,6 +17,8 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class EarthyCamouflageAbility extends PassiveAbility {
@@ -25,13 +27,13 @@ public class EarthyCamouflageAbility extends PassiveAbility {
     private static final int DAMAGE_REDUCTION_COOLDOWN = 30; // 30 seconds
 
     // Valid badlands/mesa biomes
-    private static final java.util.Set<Biome> BADLANDS_BIOMES = java.util.Set.of(
+    private static final Set<Biome> BADLANDS_BIOMES = Set.of(
             Biome.BADLANDS, Biome.ERODED_BADLANDS, Biome.WOODED_BADLANDS
     );
 
     public EarthyCamouflageAbility() {
         super("badlands_earthy_camouflage", Material.ORANGE_CONCRETE_POWDER, "Earthy Camouflage",
-                java.util.List.of(
+                List.of(
                         "Move faster (Speed II) in your biome.",
                         "Every hit (within cooldowns) taken in",
                         "your biome reduces damage by <shade-amber:500>75%</shade-amber>."

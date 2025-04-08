@@ -6,6 +6,7 @@ import net.itsthesky.terrawars.util.Colors;
 import net.minecraft.world.entity.npc.VillagerType;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
+import org.bukkit.entity.Villager;
 
 import java.util.List;
 
@@ -19,7 +20,7 @@ public class MushroomBiome extends AbstractBiome {
                         "characterized by its large mushrooms and",
                         "vibrant colors."
                 ), Material.RED_MUSHROOM_BLOCK, Material.RED_WOOL,
-                VillagerType.SWAMP);
+                Villager.Type.SWAMP);
     }
 
 }

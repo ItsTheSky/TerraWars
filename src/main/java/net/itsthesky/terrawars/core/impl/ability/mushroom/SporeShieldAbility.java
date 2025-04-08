@@ -18,6 +18,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,7 +31,7 @@ public class SporeShieldAbility extends PassiveAbility {
 
     public SporeShieldAbility() {
         super("mushroom_spore_shield", Material.RED_MUSHROOM, "Spore Shield",
-                java.util.List.of(
+                List.of(
                         "When taking damage, generate a cloud of spores",
                         "that reduces damage by <shade-red:500>15%</shade-red>, damages",
                         "attackers, and grants <shade-gray:500>5 seconds of invisibility</shade-gray>."

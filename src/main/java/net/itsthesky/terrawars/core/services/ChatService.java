@@ -108,7 +108,7 @@ public class ChatService implements IChatService {
         placeholders.add(Placeholder.styling("base", builder.getScheme().get(Colors.SHADE_500)));
         placeholders.add(Placeholder.styling("accent", builder.getScheme().get(Colors.SHADE_700)));
 
-        String message = String.format(builder.getMessage(), builder.getArgs());
+        String message = builder.getArgs().length != 0 ? String.format(builder.getMessage(), builder.getArgs()) : builder.getMessage();
         if (builder.getSource() != null) {
             message = "<accent><source> <b>&7»</b> <text>" + message;
         } else {

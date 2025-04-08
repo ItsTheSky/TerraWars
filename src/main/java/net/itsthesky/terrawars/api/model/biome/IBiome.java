@@ -3,6 +3,7 @@ package net.itsthesky.terrawars.api.model.biome;
 import net.itsthesky.terrawars.api.model.ability.IAbility;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Material;
+import org.bukkit.entity.Villager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -24,5 +25,7 @@ public interface IBiome {
     @NotNull Material getMainBlock();
 
     @NotNull Material getWoolBlock();
+
+    @NotNull Villager.Type getVillagerType();
 
 }

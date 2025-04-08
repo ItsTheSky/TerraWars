@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -240,7 +241,7 @@ public class ServiceProvider implements IServiceProvider {
     /**
      * Récupère un constructeur avec les paramètres spécifiés, retourne null s'il n'existe pas
      */
-    private <T> java.lang.reflect.Constructor<T> getNullableDeclaredConstructor(Class<T> clazz, Class<?>... parameterTypes) {
+    private <T> Constructor<T> getNullableDeclaredConstructor(Class<T> clazz, Class<?>... parameterTypes) {
         try {
             return clazz.getDeclaredConstructor(parameterTypes);
         } catch (NoSuchMethodException e) {
