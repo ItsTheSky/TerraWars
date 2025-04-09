@@ -16,7 +16,10 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.persistence.PersistentDataType;
@@ -27,7 +30,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Getter @Setter
+@Getter
+@Setter
 public class GamePlayer implements IGamePlayer {
 
     private final OfflinePlayer offlinePlayer;
@@ -35,10 +39,11 @@ public class GamePlayer implements IGamePlayer {
     private final GamePlayerListener listener;
     private IGameTeam team;
 
-    private ArmorLevel armorLevel = ArmorLevel.LEATHER;
+    private @Nullable ArmorLevel armorLevel;
     private GamePlayerState state;
 
     private boolean isRespawning = false;
+    private @Nullable IAbility lastSelectedAbility;
     private @Nullable IAbility selectedAbility;
     private BukkitTask updatePlayerTask;
     private BukkitTask respawnTask;
@@ -100,6 +105,8 @@ public class GamePlayer implements IGamePlayer {
 
             this.selectedAbility.onSelect(this);
             this.selectedAbility.removeCooldown(this);
+
+            this.lastSelectedAbility = this.selectedAbility;
         }
 
         setupHotbar(false);
@@ -141,14 +148,21 @@ public class GamePlayer implements IGamePlayer {
         player.setFoodLevel(20);
         player.setSaturation(0);
 
-        final var availableAbilities = this.team.getBiome().getAvailableAbilities();
-        if (!availableAbilities.isEmpty()) {
-            final var firstAbility = availableAbilities.get(0);
-            setSelectedAbility(firstAbility);
+        if (lastSelectedAbility == null) {
+            final var availableAbilities = this.team.getBiome().getAvailableAbilities();
+            if (!availableAbilities.isEmpty()) {
+                final var firstAbility = availableAbilities.get(0);
+                setSelectedAbility(firstAbility);
+            }
+        } else {
+            setSelectedAbility(lastSelectedAbility);
         }
 
         setupHotbar(true);
-        setArmorLevel(ArmorLevel.LEATHER);
+        if (this.armorLevel == null)
+            setArmorLevel(ArmorLevel.LEATHER);
+        else
+            refreshArmor();
 
         if (this.updatePlayerTask == null)
             this.updatePlayerTask = createUpdatePlayerTask();
@@ -164,8 +178,9 @@ public class GamePlayer implements IGamePlayer {
 
     private BukkitTask createUpdatePlayerTask() {
         return BukkitUtils.runTaskTimer(() -> {
-            if (!isOnline())
+            if (!isOnline() || !isInGame())
                 return;
+
             final var player = Objects.requireNonNull(this.offlinePlayer.getPlayer());
 
             // Check if there's any melee (swords). If not, add a wooden sword
@@ -200,7 +215,7 @@ public class GamePlayer implements IGamePlayer {
     @Override
     public void refreshArmor() {
         Checks.notNull(this.team, "Player is not in a team (game hasn't started yet)");
-        if (!isOnline())
+        if (!isOnline() || !isInGame())
             return;
 
         final var color = this.team.getBiome().getColor();
@@ -252,12 +267,19 @@ public class GamePlayer implements IGamePlayer {
     }
 
     @Override
+    public boolean isInGame() {
+        return this.state == GamePlayerState.TEAM;
+    }
+
+    @Override
     public void cleanup() {
         if (!isOnline())
             return;
 
         final var player = Objects.requireNonNull(this.offlinePlayer.getPlayer());
+
         player.getInventory().clear();
+        player.getEnderChest().clear();
         player.getPersistentDataContainer().remove(Keys.ARMOR_LEVEL_KEY);
 
         if (this.updatePlayerTask != null) {
@@ -292,6 +314,11 @@ public class GamePlayer implements IGamePlayer {
             final var ability = (ActiveAbility) selectedAbility;
 
             if (item.getPersistentDataContainer().getOrDefault(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, false)) {
+                if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK) && event.getClickedBlock() != null)
+                    if (event.getClickedBlock().getType().equals(Material.CHEST) ||
+                            event.getClickedBlock().getType().equals(Material.ENDER_CHEST))
+                        return;
+
                 ability.use(GamePlayer.this, game);
                 event.setCancelled(true);
             }
@@ -300,10 +327,9 @@ public class GamePlayer implements IGamePlayer {
 
         @EventHandler
         public void onPlayerDeath(@NotNull PlayerDeathEvent event) {
-            if (event.getEntity() != offlinePlayer)
+            if (event.getEntity() != offlinePlayer || !isInGame() || isRespawning)
                 return;
-            if (isRespawning)
-                return;
+
             event.setCancelled(true);
             getPlayer().setHealth(20);
 
@@ -317,6 +343,9 @@ public class GamePlayer implements IGamePlayer {
 
             player.teleport(game.getLobbyLocation());
             player.getInventory().clear();
+
+            game.broadcastMessage(IChatService.MessageSeverity.ERROR,
+                    "<accent>" + player.getName() + "<text> has died!");
 
             final var countdown = new AtomicInteger(game.getConfig().getDeathCooldown());
             respawnTask = BukkitUtils.runTaskTimer(() -> {
@@ -338,9 +367,39 @@ public class GamePlayer implements IGamePlayer {
                             .title("<shade-red:600><b>You died!")
                             .subtitle("<text>Respawning in <accent>" + remaining + "s")
                             .scheme(Colors.ORANGE)
-                            .time(0,  1100, 0));
+                            .time(0, 1100, 0));
                 }
             }, 5, 20);
+        }
+
+        @EventHandler
+        public void onSaturationChange(@NotNull FoodLevelChangeEvent event) {
+            if (event.getEntity() != offlinePlayer)
+                return;
+
+            event.setFoodLevel(20);
+        }
+
+        // Prevent Events
+        @EventHandler
+        public void onTryCraft(@NotNull CraftItemEvent event) {
+            if (event.getViewers().stream().anyMatch(v -> v.getUniqueId().equals(offlinePlayer.getUniqueId()))
+                    && isOnline())
+                event.setCancelled(true);
+        }
+
+        @EventHandler
+        public void onTryEquipArmor(@NotNull PlayerInteractEvent event) {
+            if (event.getPlayer() != offlinePlayer)
+                return;
+            if (!event.getAction().isRightClick())
+                return;
+            final var heldItem = event.getItem();
+            if (heldItem == null || !heldItem.getType().name().toLowerCase().contains("armor"))
+                return;
+
+            if (event.getHand() == EquipmentSlot.HAND)
+                event.setCancelled(true);
         }
     }
 }

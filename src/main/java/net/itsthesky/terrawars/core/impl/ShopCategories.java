@@ -1,5 +1,6 @@
 package net.itsthesky.terrawars.core.impl;
 
+import net.itsthesky.terrawars.api.model.game.IGamePlayer;
 import net.itsthesky.terrawars.api.model.shop.ArmorLevel;
 import net.itsthesky.terrawars.api.model.shop.ShopCategory;
 import net.itsthesky.terrawars.api.model.shop.items.OneTimeShopItem;
@@ -10,6 +11,8 @@ import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Set;
@@ -141,5 +144,16 @@ public final class ShopCategories {
     public static final List<ShopCategory> CATEGORIES = List.of(
             BLOCKS, WEAPONS, ARMORS
     );
+
+    public static @Nullable ItemStack buildItem(@NotNull String itemId, @NotNull IGamePlayer player) {
+        for (ShopCategory category : CATEGORIES) {
+            for (final var item : category.getItems()) {
+                if (item.getId().equals(itemId) && item instanceof final OneTimeShopItem oneTimeShopItem) {
+                    return oneTimeShopItem.getItemBuilder().apply(player);
+                }
+            }
+        }
+        return null;
+    }
 
 }

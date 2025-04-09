@@ -1,6 +1,7 @@
 package net.itsthesky.terrawars.core.impl.game;
 
 import com.github.stefvanschie.inventoryframework.util.UUIDTagType;
+import lombok.Getter;
 import net.itsthesky.terrawars.api.model.game.IGameNexus;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
 import net.itsthesky.terrawars.api.services.IChatService;
@@ -8,12 +9,11 @@ import net.itsthesky.terrawars.util.BukkitUtils;
 import net.itsthesky.terrawars.util.Keys;
 import net.itsthesky.terrawars.util.StringUtils;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.entity.Display;
-import org.bukkit.entity.EnderCrystal;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.TextDisplay;
+import org.bukkit.damage.DamageType;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -33,9 +33,12 @@ public class GameNexus implements IGameNexus {
     private final int maxLevel;
 
     private final BukkitTask regenTask;
+    private final NexusListener listener;
 
     private NexusCrystal crystal;
 
+    @Getter
+    private boolean isDestroyed;
     private int level;
     private long lastDamage;
 
@@ -43,14 +46,15 @@ public class GameNexus implements IGameNexus {
         this.location = gameTeam.getConfig().getNexusLocation();
         this.team = gameTeam;
 
-        this.stats = new NexusStats(500, 500, 2, 30);
-        this.maxLevel = 3;
+        this.isDestroyed = false;
 
+        this.stats = new NexusStats(500, 500, 5, 60);
+        this.maxLevel = 3;
         this.level = 1;
 
         this.crystal = new NexusCrystal();
 
-        BukkitUtils.registerListener(new NexusListener());
+        BukkitUtils.registerListener(this.listener = new NexusListener());
         regenTask = BukkitUtils.runTaskTimer(() -> {
             if (System.currentTimeMillis() - lastDamage > stats.getRegenDelay() * 1000L) {
                 if (stats.getHealth() < stats.getMaxHealth()) {
@@ -112,18 +116,39 @@ public class GameNexus implements IGameNexus {
     }
 
     public void cleanup() {
+        this.crystal.cleanup();
+        if (this.regenTask != null) this.regenTask.cancel();
+        if (this.listener != null) BukkitUtils.unregisterListener(this.listener);
+    }
+
+    public void destroyNexus() {
+        this.isDestroyed = true;
         this.crystal.destroy();
-        if (regenTask != null)
-            regenTask.cancel();
+        this.regenTask.cancel();
+        BukkitUtils.unregisterListener(this.listener);
+
+        getGame().getWorld().playSound(
+                getLocation(),
+                Sound.ENTITY_ENDER_DRAGON_DEATH,
+                1f, 1f
+        );
+        getGame().getWorld().spawnParticle(
+                Particle.EXPLOSION,
+                getLocation(),
+                15,
+                0.5, 0.5, 0.5,
+                0
+        );
     }
 
     public class NexusCrystal {
 
         private EnderCrystal crystal;
         private TextDisplay display;
+        private BlockDisplay destroyedDisplay;
 
         public NexusCrystal() {
-            location.getWorld().spawn(location.add(0, 1, 0), EnderCrystal.class, crystal -> {
+            location.getWorld().spawn(location.clone().add(0, 1, 0), EnderCrystal.class, crystal -> {
                 this.crystal = crystal;
 
                 this.crystal.setInvulnerable(false);
@@ -131,7 +156,7 @@ public class GameNexus implements IGameNexus {
                 this.crystal.setShowingBottom(false);
                 this.crystal.getPersistentDataContainer().set(Keys.NEXUS_TEAM_KEY, UUIDTagType.INSTANCE, team.getId());
             });
-            location.getWorld().spawn(location.add(0, 2, 0), TextDisplay.class, display -> {
+            location.getWorld().spawn(location.clone().add(0, 3, 0), TextDisplay.class, display -> {
                 this.display = display;
 
                 this.display.setBillboard(Display.Billboard.CENTER);
@@ -142,40 +167,66 @@ public class GameNexus implements IGameNexus {
         }
 
         private void updateTextDisplay() {
-            // make a cool progress for the hearts using ❤
-            final var filledColor = "<shade-red:500>";
-            final var emptyColor = "<shade-slate:500>";
-            final var maxHearts = 10;
-            final var progress = StringUtils.generateProgressBar(
-                    stats.getHealth(),
-                    stats.getMaxHealth(),
-                    maxHearts,
-                    filledColor + "❤",
-                    emptyColor + "❤"
-            );
-            final var percentage = Math.round((float) stats.getHealth() / stats.getMaxHealth() * 100);
-            final var hearts = progress + " <shade-slate:500>- <shade-red:200>" + percentage + "%";
+            if (!isDestroyed) {
+                final var filledColor = "<shade-red:500>";
+                final var emptyColor = "<shade-slate:500>";
+                final var maxHearts = 10;
+                final var progress = StringUtils.generateProgressBar(
+                        stats.getHealth(),
+                        stats.getMaxHealth(),
+                        maxHearts,
+                        filledColor + "❤",
+                        emptyColor + "❤"
+                );
+                final var percentage = Math.round((float) stats.getHealth() / stats.getMaxHealth() * 100);
+                final var hearts = progress + " <shade-slate:500>- <shade-red:200>" + percentage + "%";
 
-            final var healthInfos = "<shade-red:200>" + stats.getHealth() + "/" + stats.getMaxHealth() + " <shade-red:500>❤ <shade-slate:500>- <shade-rose:500>" + stats.getRegenPerSec() + " ❤/s";
+                final var healthInfos = "<shade-red:200>" + stats.getHealth() + "/" + stats.getMaxHealth() + " <shade-red:500>❤ <shade-slate:500>- <shade-rose:500>" + stats.getRegenPerSec() + " ❤/s";
 
-            final List<String> lines = List.of(
-                    "<accent>✦ <text>" + getTeam().getBiome().getName() + " Nexus <shade-slate:500>- <base>Level " + getLevel() + " <accent>✦",
-                    hearts,
-                    healthInfos
-            );
+                final List<String> lines = List.of(
+                        "<accent>✦ <text>" + getTeam().getBiome().getName() + " Nexus <shade-slate:500>- <base>Level " + getLevel() + " <accent>✦",
+                        hearts,
+                        healthInfos
+                );
 
-            final var chatService = getGame().getChatService();
+                final var chatService = getGame().getChatService();
 
-            this.display.text(chatService.joinNewLine(lines.stream()
-                    .map(line -> chatService.format(line, getTeam().getColorScheme()))
-                    .toList()));
+                this.display.text(chatService.joinNewLine(lines.stream()
+                        .map(line -> chatService.format(line, getTeam().getColorScheme()))
+                        .toList()));
+            } else {
+                final var lines = List.of(
+                        "<shade-slate:500>✦ <accent>" + getTeam().getBiome().getName() + " Nexus <shade-slate:500>- <base>Level " + getLevel() + " <shade-slate:500>✦",
+                        "<shade-red:500>\uD83D\uDC80 <shade-slate:500>- <shade-red:200>DESTROYED <shade-slate:500>- <shade-red:500>\uD83D\uDC80"
+                );
+
+                final var chatService = getGame().getChatService();
+                this.display.text(chatService.joinNewLine(lines.stream()
+                        .map(line -> chatService.format(line, getTeam().getColorScheme()))
+                        .toList()));
+            }
+        }
+
+        private void cleanup() {
+            if (this.crystal != null) this.crystal.remove();
+            if (this.display != null) this.display.remove();
+            if (this.destroyedDisplay != null) this.destroyedDisplay.remove();
         }
 
         private void destroy() {
-            // kill both entities
-            if (this.crystal != null) this.crystal.remove();
-            if (this.display != null) this.display.remove();
-            ;
+            if (this.crystal != null) {
+                this.crystal.remove();
+                this.crystal = null;
+            }
+
+            this.destroyedDisplay = location.getWorld().spawn(location.clone().add(0, 1, 0), BlockDisplay.class, display -> {
+                this.destroyedDisplay = display;
+
+                this.destroyedDisplay.setBillboard(Display.Billboard.CENTER);
+                this.destroyedDisplay.setBlock(Material.BEDROCK.createBlockData());
+            });
+
+            updateTextDisplay();
         }
     }
 
@@ -197,6 +248,8 @@ public class GameNexus implements IGameNexus {
                 return;
             if (!(sourceEntity instanceof final Player player))
                 return;
+            if (event.getFinalDamage() <= 1.5d)
+                return;
 
             final var gamePlayer = getGame().findGamePlayer(player);
             if (gamePlayer == null)
@@ -213,6 +266,7 @@ public class GameNexus implements IGameNexus {
                 if (newHealth <= 0) {
                     getGame().getChatService().sendMessage(player, IChatService.MessageSeverity.INFO,
                             "You destroyed the <accent>" + getTeam() + "<text> nexus!");
+                    destroyNexus();
                 } else {
                     getGame().getWorld().playSound(
                             getLocation(),

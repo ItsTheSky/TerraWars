@@ -42,4 +42,12 @@ public class GameConfig {
         if (saveRunnable != null)
             saveRunnable.run();
     }
+
+    public boolean isValid() {
+        if (world == null || lobby == null || teams.isEmpty())
+            return false;
+        for (GameTeamConfig team : teams)
+            if (!team.isValid()) return false;
+        return true;
+    }
 }

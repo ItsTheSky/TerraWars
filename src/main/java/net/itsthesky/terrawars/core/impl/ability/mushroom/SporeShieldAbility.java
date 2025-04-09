@@ -32,9 +32,9 @@ public class SporeShieldAbility extends PassiveAbility {
     public SporeShieldAbility() {
         super("mushroom_spore_shield", Material.RED_MUSHROOM, "Spore Shield",
                 List.of(
-                        "When taking damage, generate a cloud of spores",
-                        "that reduces damage by <shade-red:500>15%</shade-red>, damages",
-                        "attackers, and grants <shade-gray:500>5 seconds of invisibility</shade-gray>."
+                        "When taking damage, generate a cloud of",
+                        "spores that reduces damage by <shade-red:500>15%</shade-red>,",
+                        "damages attackers, and grants <shade-gray:500>5 seconds of invisibility</shade-gray>."
                 ), COOLDOWN_SECONDS);
     }
 

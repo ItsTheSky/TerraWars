@@ -1,6 +1,7 @@
 package net.itsthesky.terrawars.core.services;
 
 import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.arguments.PlayerArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
@@ -12,11 +13,11 @@ import net.itsthesky.terrawars.api.services.base.Service;
 import net.itsthesky.terrawars.core.config.GameConfig;
 import net.itsthesky.terrawars.core.config.GameTeamConfig;
 import net.itsthesky.terrawars.core.gui.ShopKeeperGui;
-import net.itsthesky.terrawars.core.impl.ability.tundra.IglooAbility;
 import net.itsthesky.terrawars.core.impl.game.Game;
 import net.itsthesky.terrawars.util.Checks;
 import net.itsthesky.terrawars.util.Colors;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -62,7 +63,6 @@ public class GameService implements IGameService, IService {
         final var game = new Game(serviceProvider, config);
         games.put(game.getId(), game);
         game.setState(IGame.GameState.WAITING);
-        // game.setAvailableBiomes(availableBiomes);
 
         return game;
     }
@@ -120,6 +120,21 @@ public class GameService implements IGameService, IService {
                                 }
                             }
                         }))
+                .withSubcommand(new CommandAPICommand("force_start")
+                        .executesPlayer((player, args) -> {
+                            final var game = getPlayerGame(player.getUniqueId());
+                            if (game == null) {
+                                chatService.sendMessage(player, IChatService.MessageSeverity.ERROR, "You are not in a game!");
+                                return;
+                            }
+
+                            if (game.getState() != IGame.GameState.WAITING) {
+                                chatService.sendMessage(player, IChatService.MessageSeverity.ERROR, "You can only start a game in the waiting state!");
+                                return;
+                            }
+
+                            ((Game) game).setupStartedGame();
+                        }))
                 .withSubcommand(new CommandAPICommand("sample_game")
                         .executesPlayer((player, args) -> {
                             final var game = createGame(configService.load(GameConfig.class, "games" + File.separator + "sample_game.json"));
@@ -145,9 +160,11 @@ public class GameService implements IGameService, IService {
                             gui.show(player);
                         }))
                 .withSubcommand(new CommandAPICommand("join")
-                        .withArguments(List.of(new StringArgument("game_id")))
+                        .withArguments(List.of(new StringArgument("game_id"),
+                                new PlayerArgument("target")))
                         .executesPlayer((player, args) -> {
                             final var gameId = UUID.fromString((String) Objects.requireNonNull(args.get("game_id")));
+                            final var target = (Player) args.getOrDefault("target", player);
                             final var game = games.get(gameId);
 
                             if (game == null) {
@@ -155,12 +172,12 @@ public class GameService implements IGameService, IService {
                                 return;
                             }
 
-                            if (!game.tryAddPlayer(player)) {
-                                chatService.sendMessage(player, IChatService.MessageSeverity.ERROR, "Game is full or you are already in the game!");
+                            if (!game.tryAddPlayer(target)) {
+                                chatService.sendMessage(player, IChatService.MessageSeverity.ERROR, "Game is full or " + target.getName() + " is already in a game!");
                                 return;
                             }
 
-                            chatService.sendMessage(player, IChatService.MessageSeverity.SUCCESS, "You joined the game with ID <base>" + gameId + "<text>!");
+                            chatService.sendMessage(player, IChatService.MessageSeverity.SUCCESS, target.getName() + " joined the game with ID <base>" + gameId + "<text>!");
                         }))
                 .withSubcommand(new CommandAPICommand("edit")
                         .withArguments(new StringArgument("name"))

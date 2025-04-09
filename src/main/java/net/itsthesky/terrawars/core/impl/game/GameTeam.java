@@ -10,6 +10,7 @@ import net.itsthesky.terrawars.core.config.GameTeamConfig;
 import net.itsthesky.terrawars.util.Colors;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Location;
+import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -63,6 +64,11 @@ public class GameTeam implements IGameTeam {
     }
 
     @Override
+    public @Nullable IGamePlayer getPlayer(@NotNull Player player) {
+        return players.get(player.getUniqueId());
+    }
+
+    @Override
     public boolean tryAddPlayer(@NotNull IGamePlayer player) {
         if (players.size() >= game.getSize().getPlayerPerTeam())
             return false;
@@ -76,5 +82,14 @@ public class GameTeam implements IGameTeam {
         this.nexus.cleanup();
         for (GamePlayer player : players.values()) player.cleanup();
         for (GameShopEntity shopEntity : shopEntities) shopEntity.cleanup();
+
+        final var teamChestBlock = config.getChestLocation().getBlock();
+        if (teamChestBlock.getState() instanceof final Chest chest)
+            chest.getInventory().clear();
+    }
+
+    @Override
+    public @NotNull Location getTeamChestLocation() {
+        return config.getChestLocation();
     }
 }

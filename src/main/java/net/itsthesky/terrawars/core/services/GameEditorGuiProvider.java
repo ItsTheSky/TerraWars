@@ -267,7 +267,7 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
                 "Move to the location, then <base>right click the emerald<text>!",
                 new IBaseGuiControlsService.InputControlData<>(
                         Material.DIAMOND,
-                        null, teamConfig.getShopkeeperLocation(),
+                        null, teamConfig.getUpgradesLocation(),
                         "Upgrades Shop Location",
                         List.of("The location where the upgrades shop will be placed", "in the game."),
                         (location, inputData) -> {
@@ -277,6 +277,22 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
                         }
                 )
         ), Slot.fromIndex(5));
+
+        configItemPane.addItem(baseGuiControlsService.createLocationInputControl(
+                "<base>Right click the emerald<text> on a normal <accent>chest<text>!",
+                loc -> loc.getBlock().getType().equals(Material.CHEST),
+                new IBaseGuiControlsService.InputControlData<>(
+                        Material.CHEST,
+                        null, teamConfig.getChestLocation(),
+                        "Team Chest Location",
+                        List.of("The location where the team chest is located", "in the game, so it can be shared", "and correctly reset."),
+                        (location, inputData) -> {
+                            inputData.setCurrentValue(location);
+                            teamConfig.setChestLocation(location);
+                            gameConfig.save();
+                        }
+                )
+        ), Slot.fromIndex(6));
 
         // add base controls
         controlsPane.addItem(baseGuiControlsService.createBackButton(evt -> main.show(evt.getWhoClicked())),

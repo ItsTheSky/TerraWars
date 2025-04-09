@@ -23,6 +23,8 @@ public interface IGameNexus extends IGameHolder {
 
     @NotNull NexusStats getStats();
 
+    boolean isDestroyed();
+
     @Getter
     @Setter
     @NoArgsConstructor

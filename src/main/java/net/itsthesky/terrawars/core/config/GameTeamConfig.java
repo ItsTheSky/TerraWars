@@ -34,7 +34,17 @@ public class GameTeamConfig {
     @SerializedName("upgrades_location")
     private Location upgradesLocation;
 
+    @JsonAdapter(LocationAdapter.class)
+    @SerializedName("chest_location")
+    private Location chestLocation;
+
     @SerializedName("biome_id")
     private String biomeId;
+
+    public boolean isValid() {
+        return spawnLocation != null && nexusLocation != null && generatorLocation != null
+                && shopkeeperLocation != null && upgradesLocation != null && chestLocation != null
+                && biomeId != null;
+    }
 
 }

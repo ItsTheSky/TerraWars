@@ -1,6 +1,7 @@
 package net.itsthesky.terrawars.core.impl.biome;
 
 import net.itsthesky.terrawars.api.model.biome.AbstractBiome;
+import net.itsthesky.terrawars.core.impl.ability.mushroom.FungalGrowthAbility;
 import net.itsthesky.terrawars.core.impl.ability.mushroom.SporeShieldAbility;
 import net.itsthesky.terrawars.util.Colors;
 import net.minecraft.world.entity.npc.VillagerType;
@@ -14,7 +15,7 @@ public class MushroomBiome extends AbstractBiome {
 
     public MushroomBiome() {
         super("mushroom", "Mushroom", Colors.ROSE,
-                List.of(new SporeShieldAbility()),
+                List.of(new SporeShieldAbility(), new SporeShieldAbility(), new FungalGrowthAbility()),
                 Colors.ROSE.get(Colors.SHADE_600), List.of(
                         "The <base>Mushroom<text> biome is a unique biome,",
                         "characterized by its large mushrooms and",

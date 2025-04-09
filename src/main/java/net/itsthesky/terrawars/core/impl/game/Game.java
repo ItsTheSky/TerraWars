@@ -17,10 +17,8 @@ import net.itsthesky.terrawars.api.services.base.Inject;
 import net.itsthesky.terrawars.core.config.GameConfig;
 import net.itsthesky.terrawars.core.config.GameTeamConfig;
 import net.itsthesky.terrawars.core.events.game.GameStateChangeEvent;
-import net.itsthesky.terrawars.util.BukkitUtils;
-import net.itsthesky.terrawars.util.Checks;
-import net.itsthesky.terrawars.util.Colors;
-import net.itsthesky.terrawars.util.Keys;
+import net.itsthesky.terrawars.core.impl.ShopCategories;
+import net.itsthesky.terrawars.util.*;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -31,6 +29,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.ItemMergeEvent;
@@ -301,9 +300,9 @@ public class Game implements IGame {
         }
 
         this.teams.clear();
-        List<GameTeamConfig> teamConfigs = new ArrayList<GameTeamConfig>();
-        if (waitingPlayers.size() < 4) // we don't have enough players, so we will just setup the right amount of team
-            teamConfigs = config.getTeams().subList(0, waitingPlayers.size());
+        List<GameTeamConfig> teamConfigs;
+        if (waitingPlayers.size() < 4) // have at least 2 teams tho;
+            teamConfigs = config.getTeams().subList(0, Math.max(2, waitingPlayers.size()));
         else
             teamConfigs = config.getTeams();
 
@@ -330,6 +329,7 @@ public class Game implements IGame {
         for (GameTeam team : teams) {
             for (IGamePlayer player : team.getPlayers()) {
                 if (player.isOnline()) {
+                    player.setState(IGamePlayer.GamePlayerState.TEAM);
                     player.getPlayer().teleport(team.getConfig().getSpawnLocation().add(0, 1, 0).toCenterLocation());
                     player.setup();
                 }
@@ -395,13 +395,18 @@ public class Game implements IGame {
         // Protection Handler (place/break blocks)
         @EventHandler(priority = EventPriority.HIGH)
         public void onPlayerPlace(BlockPlaceEvent event) {
-            if (state != GameState.RUNNING || event.isCancelled())
+            if (event.isCancelled())
                 return;
 
             final var player = event.getPlayer();
             final var gamePlayer = findGamePlayer(player);
             if (gamePlayer == null)
                 return;
+
+            if (state == GameState.WAITING || state == GameState.STARTING) {
+                event.setCancelled(true);
+                return;
+            }
 
             final var team = gamePlayer.getTeam();
             if (team == null)
@@ -413,8 +418,12 @@ public class Game implements IGame {
                 return;
             }
 
-            BukkitUtils.editBlockPdc(block, pdc ->
-                    pdc.set(Keys.GAME_PLACED_BLOCK_KEY, PersistentDataType.STRING, player.getUniqueId().toString()));
+            BukkitUtils.editBlockPdc(block, pdc -> {
+                pdc.set(Keys.GAME_PLACED_BLOCK_KEY, PersistentDataType.STRING, player.getUniqueId().toString());
+                if (event.getItemInHand().getPersistentDataContainer().has(Keys.SHOP_ITEM_KEY, PersistentDataType.STRING))
+                    pdc.set(Keys.SHOP_ITEM_KEY, PersistentDataType.STRING,
+                            Objects.requireNonNull(event.getItemInHand().getPersistentDataContainer().get(Keys.SHOP_ITEM_KEY, PersistentDataType.STRING)));
+            });
             placedBlocks.put(block.getLocation(), block);
         }
 
@@ -434,9 +443,27 @@ public class Game implements IGame {
                 return;
             }
 
-            final var pdc = BukkitUtils.getBlockPdc(block);
-            if (pdc == null || !pdc.has(Keys.GAME_PLACED_BLOCK_KEY, PersistentDataType.STRING))
+            if (state == GameState.WAITING || state == GameState.STARTING) {
                 event.setCancelled(true);
+                return;
+            }
+
+            final var pdc = BukkitUtils.getBlockPdc(block);
+            if (pdc == null || !pdc.has(Keys.GAME_PLACED_BLOCK_KEY, PersistentDataType.STRING)) {
+                event.setCancelled(true);
+            } else {
+                final var shopItemId = pdc.get(Keys.SHOP_ITEM_KEY, PersistentDataType.STRING);
+                if (shopItemId != null) {
+                    event.setDropItems(false);
+                    final var item = new ItemBuilder(ShopCategories.buildItem(shopItemId, gamePlayer))
+                            .amount(1)
+                            .setCustomData(Keys.SHOP_ITEM_KEY, PersistentDataType.STRING, shopItemId)
+                            .getItem();
+                    if (item != null) {
+                        block.getWorld().dropItem(block.getLocation(), item);
+                    }
+                }
+            }
 
             placedBlocks.remove(block.getLocation());
         }
@@ -445,7 +472,7 @@ public class Game implements IGame {
         @EventHandler(priority = EventPriority.HIGH)
         public void onPlayerInteract(@NotNull PlayerInteractEvent event) {
             final var player = event.getPlayer();
-            if (state != GameState.RUNNING)
+            if (state != GameState.RUNNING || !player.isOnline())
                 return;
             final var gamePlayer = findGamePlayer(player);
             if (gamePlayer == null)
@@ -477,6 +504,27 @@ public class Game implements IGame {
                 return;
 
             event.setCancelled(true);
+        }
+
+        @EventHandler
+        public void onPlayerOpenChest(PlayerInteractEvent event) {
+            if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getClickedBlock() != null) {
+                final var block = event.getClickedBlock();
+                if (block.getType().equals(Material.CHEST)) {
+                    for (final var team : teams) {
+                        if (team.getTeamChestLocation().toBlockLocation().equals(block.getLocation())) {
+                            final var teamPlayer = team.getPlayer(event.getPlayer());
+                            if (teamPlayer != null) // It's the same team; the player can open the chest
+                                return;
+
+                            event.setCancelled(true);
+                            chatService.sendMessage(event.getPlayer(), IChatService.MessageSeverity.ERROR,
+                                    "You cannot open this chest, it's not yours!");
+                            break;
+                        }
+                    }
+                }
+            }
         }
     }
 

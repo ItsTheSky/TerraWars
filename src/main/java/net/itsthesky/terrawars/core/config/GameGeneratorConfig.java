@@ -18,4 +18,8 @@ public class GameGeneratorConfig {
     @SerializedName("generator_location")
     private Location generatorLocation = null;
 
+    public boolean isValid() {
+        return generatorLocation != null && generatorType != null && generatorType != GameGeneratorType.BASE;
+    }
+
 }

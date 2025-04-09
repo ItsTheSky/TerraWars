@@ -357,7 +357,9 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
     }
 
     @Override
-    public @NotNull GuiItem createLocationInputControl(@NotNull String instructions, @NotNull InputControlData<Location> inputData) {
+    public @NotNull GuiItem createLocationInputControl(@NotNull String instructions,
+                                                       @NotNull Predicate<Location> validator,
+                                                       @NotNull InputControlData<Location> inputData) {
         final var item = new ItemBuilder(inputData.getMaterial())
                 .name("<accent><b>✏</b> <base>" + inputData.getName(), Colors.YELLOW)
                 .lore(Colors.YELLOW, buildLocationLore(inputData).toArray(new String[0]));
@@ -389,20 +391,25 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
 
             waitingForLocation.put(event.getWhoClicked().getUniqueId(), playerInteractEvent -> BukkitUtils.sync(() -> {
                 final var player = playerInteractEvent.getPlayer();
+                Location location = null;
                 if (playerInteractEvent.getAction() == Action.RIGHT_CLICK_BLOCK) {
                     final var block = playerInteractEvent.getClickedBlock();
                     if (block != null) {
-                        final var location = block.getLocation();
-                        inputData.getOnInput().accept(location, inputData);
-                        item.lore(Colors.YELLOW, buildLocationLore(inputData).toArray(new String[0]));
-                        gui.update();
+                        location = block.getLocation();
                     }
                 } else if (playerInteractEvent.getAction() == Action.RIGHT_CLICK_AIR) {
-                    final var location = player.getLocation();
-                    inputData.getOnInput().accept(location, inputData);
-                    item.lore(Colors.YELLOW, buildLocationLore(inputData).toArray(new String[0]));
-                    gui.update();
+                    location = player.getLocation();
                 }
+
+                if (location == null || !validator.test(location)) {
+                    chatService.sendMessage(player, IChatService.MessageSeverity.ERROR, "Invalid location.");
+                    gui.show(player);
+                    return;
+                }
+
+                inputData.getOnInput().accept(location, inputData);
+                item.lore(Colors.YELLOW, buildLocationLore(inputData).toArray(new String[0]));
+                gui.update();
 
                 for (int i = 0; i < 9; i++)
                     player.getInventory().setItem(i, locationHotbars.get(player.getUniqueId()).get(i));

@@ -72,7 +72,13 @@ public interface IBaseGuiControlsService {
                                                        @NotNull InputControlData<Integer> inputData);
 
     @NotNull GuiItem createLocationInputControl(@NotNull String instructions,
+                                                @NotNull Predicate<Location> validator,
                                                 @NotNull InputControlData<Location> inputData);
+
+    default @NotNull GuiItem createLocationInputControl(@NotNull String instructions,
+                                                        @NotNull InputControlData<Location> inputData) {
+        return createLocationInputControl(instructions, l -> true, inputData);
+    }
 
     <T> @NotNull GuiItem createComboBoxInputControl(@NotNull List<T> options,
                                                     @NotNull InputControlData<T> inputData,
