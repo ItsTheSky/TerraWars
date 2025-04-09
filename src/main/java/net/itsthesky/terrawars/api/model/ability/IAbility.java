@@ -48,8 +48,6 @@ public interface IAbility {
 
     @NotNull ItemStack buildHotBarItem(IGamePlayer player);
 
-    @NotNull ItemStack buildShopItem(Player player);
-
     default void onSelect(@NotNull IGamePlayer player) {};
 
     default void onDeselect(@NotNull IGamePlayer player) {};

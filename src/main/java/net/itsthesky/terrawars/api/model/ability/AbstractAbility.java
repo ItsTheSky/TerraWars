@@ -79,18 +79,6 @@ public abstract class AbstractAbility implements IAbility {
     }
 
     @Override
-    public @NotNull ItemStack buildShopItem(Player player) {
-        final var lore = new ArrayList<String>();
-        // TODO: make a proper description
-
-        return new ItemBuilder(getIcon())
-                .cleanLore()
-                .lore(Colors.INDIGO, lore)
-                .name(getDisplayName())
-                .getItem();
-    }
-
-    @Override
     public void removeCooldown(IGamePlayer player) {
         UUID playerId = player.getPlayer().getUniqueId();
         cooldowns.remove(playerId);
