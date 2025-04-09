@@ -144,6 +144,16 @@ public interface IGame {
         broadcastMessage(severity, message, null, null);
     }
 
+    void broadcastMessage(@NotNull List<TextColor> scheme,
+                          @NotNull String message,
+                          @Nullable IGameTeam specificTeam,
+                          @Nullable OfflinePlayer sender);
+
+    default void broadcastMessage(@NotNull List<TextColor> scheme,
+                                  @NotNull String message) {
+        broadcastMessage(scheme, message, null, null);
+    }
+
     void broadcastTitle(@NotNull String title, @NotNull String subtitle,
                         Duration fadeIn, Duration stay, Duration fadeOut,
                         @NotNull List<TextColor> scheme,

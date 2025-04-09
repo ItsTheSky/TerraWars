@@ -187,10 +187,21 @@ public class Game implements IGame {
     @Override
     public void broadcastMessage(IChatService.@NotNull MessageSeverity severity, @NotNull String message,
                                  @Nullable IGameTeam specificTeam, @Nullable OfflinePlayer sender) {
-        final var targets = new ArrayList<Audience>();
-        final var builder = new IChatService.MessageBuilder()
+        broadcastMessage(new IChatService.MessageBuilder()
                 .severity(severity)
-                .message(message);
+                .message(message), specificTeam, sender);
+    }
+
+    @Override
+    public void broadcastMessage(@NotNull List<TextColor> scheme, @NotNull String message, @Nullable IGameTeam specificTeam, @Nullable OfflinePlayer sender) {
+        broadcastMessage(new IChatService.MessageBuilder()
+                .message(message)
+                .scheme(scheme), specificTeam, sender);
+    }
+
+    private void broadcastMessage(@NotNull IChatService.MessageBuilder builder,
+                                  @Nullable IGameTeam specificTeam, @Nullable OfflinePlayer sender) {
+        final var targets = new ArrayList<Audience>();
         if (sender != null && sender.isOnline())
             builder.source(sender.getPlayer());
 

@@ -222,7 +222,6 @@ public class GameNexus implements IGameNexus {
             this.destroyedDisplay = location.getWorld().spawn(location.clone().add(0, 1, 0), BlockDisplay.class, display -> {
                 this.destroyedDisplay = display;
 
-                this.destroyedDisplay.setBillboard(Display.Billboard.CENTER);
                 this.destroyedDisplay.setBlock(Material.BEDROCK.createBlockData());
             });
 
@@ -248,14 +247,14 @@ public class GameNexus implements IGameNexus {
                 return;
             if (!(sourceEntity instanceof final Player player))
                 return;
-            if (event.getFinalDamage() <= 1.5d)
+            if (event.getFinalDamage() <= 1.5d || System.currentTimeMillis() - lastDamage < 12)
                 return;
 
             final var gamePlayer = getGame().findGamePlayer(player);
             if (gamePlayer == null)
                 return;
 
-            if (gamePlayer.getTeam().getId().equals(teamId)) { // Same team, just gives a warning!
+            if (gamePlayer.getTeam().getId().equals(teamId)) {
                 getGame().getChatService().sendMessage(player, IChatService.MessageSeverity.ERROR,
                         "You cannot damage your <accent>own nexus<text>!");
             } else {
@@ -265,7 +264,9 @@ public class GameNexus implements IGameNexus {
                 final var newHealth = (int) Math.round(getStats().getHealth() - dealt);
                 if (newHealth <= 0) {
                     getGame().getChatService().sendMessage(player, IChatService.MessageSeverity.INFO,
-                            "You destroyed the <accent>" + getTeam() + "<text> nexus!");
+                            "You destroyed the <accent>" + getTeam().getBiome().getName() + "<text> nexus!");
+                    getGame().broadcastMessage(getTeam().getColorScheme(),
+                            "The <accent>" + getTeam().getBiome().getName() + "<text> nexus has been destroyed by <accent>" + player.getName() + "<text>!");
                     destroyNexus();
                 } else {
                     getGame().getWorld().playSound(
