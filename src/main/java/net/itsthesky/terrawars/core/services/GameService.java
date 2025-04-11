@@ -14,10 +14,15 @@ import net.itsthesky.terrawars.core.config.GameConfig;
 import net.itsthesky.terrawars.core.config.GameTeamConfig;
 import net.itsthesky.terrawars.core.gui.ShopKeeperGui;
 import net.itsthesky.terrawars.core.impl.game.Game;
-import net.itsthesky.terrawars.util.Checks;
-import net.itsthesky.terrawars.util.Colors;
+import net.itsthesky.terrawars.util.*;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.entity.Display;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,6 +48,31 @@ public class GameService implements IGameService, IService {
     private IGameEditorGuiProvider gameEditorGuiProvider;
 
     private final Map<UUID, IGame> games = new HashMap<>();
+
+    public GameService() {
+        BukkitUtils.registerListener(new Listener() {
+
+            @EventHandler
+            public void onPLayerInteract(@NotNull PlayerInteractEvent event) {
+                if (event.getItem() == null || event.getItem().getType() != Material.STICK) return;
+                if (!event.getItem().getPersistentDataContainer().getOrDefault(Keys.KILLER_KEY, PersistentDataType.BOOLEAN, false))
+                    return;
+
+                final var player = event.getPlayer();
+                final var entities = event.getPlayer().getLocation()
+                        .getNearbyEntitiesByType(Display.class, 2);
+                if (entities.isEmpty()) {
+                    chatService.sendMessage(player, IChatService.MessageSeverity.ERROR, "No entities found nearby!");
+                    return;
+                }
+
+                for (final var entity : entities)
+                    entity.remove();
+                chatService.sendMessage(player, IChatService.MessageSeverity.SUCCESS, "Removed " + entities.size() + " entities!");
+            }
+
+        });
+    }
 
     @Override
     public @NotNull Set<IGame> getGames() {
@@ -158,6 +188,15 @@ public class GameService implements IGameService, IService {
                             final var gamePlayer = game.findGamePlayer(player);
                             final var gui = new ShopKeeperGui(game, gamePlayer);
                             gui.show(player);
+                        }))
+                .withSubcommand(new CommandAPICommand("give_killer")
+                        .executesPlayer((player, args) -> {
+                            final var item = new ItemBuilder(Material.STICK)
+                                    .name("<accent><b>Killer Stick</b>", Colors.RED)
+                                    .setCustomData(Keys.KILLER_KEY, PersistentDataType.BOOLEAN, true)
+                                    .getItem();
+
+                            player.getInventory().addItem(item);
                         }))
                 .withSubcommand(new CommandAPICommand("join")
                         .withArguments(List.of(new StringArgument("game_id"),

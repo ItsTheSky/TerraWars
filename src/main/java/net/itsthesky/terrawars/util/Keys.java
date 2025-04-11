@@ -73,6 +73,8 @@ public final class Keys {
      */
     public static final NamespacedKey WEAPON_KEY = new NamespacedKey(NAMESPACE, "weapon_item");
 
+    public static final NamespacedKey KILLER_KEY = new NamespacedKey(NAMESPACE, "killer_item");
+
     //endregion
 
     //region Player-specific keys

@@ -4,7 +4,9 @@ import net.itsthesky.terrawars.TerraWars;
 import net.itsthesky.terrawars.api.services.IChatService;
 import net.itsthesky.terrawars.core.impl.game.Game;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
@@ -132,5 +134,18 @@ public final class BukkitUtils {
                 .type(sound);
 
         audience.playSound(advSound.build());
+    }
+
+    private static final JSONComponentSerializer jsonSerializer = JSONComponentSerializer.builder()
+            .build();
+
+    public static Component deserializeJsonText(String rawJson) {
+        if (rawJson == null || rawJson.isEmpty())
+            return Component.empty();
+        try {
+            return jsonSerializer.deserialize(rawJson);
+        } catch (Exception e) {
+            return Component.text(rawJson);
+        }
     }
 }

@@ -141,6 +141,22 @@ public final class ShopCategories {
 
     ));
 
+    public static final ShopCategory MISC = new ShopCategory("Misc",
+            new ItemStack(Material.BOOK), List.of(
+            new OneTimeShopItem("golden_apple", "Golden Apple",
+                    new ItemBuilder(Material.GOLDEN_APPLE)
+                            .setCustomData(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, true)
+                            .unbreakable()
+                            .getItem())
+                    .addPrice(Material.GOLD_INGOT, 8),
+            new OneTimeShopItem("ender_pearl", "Ender Pearl",
+                    new ItemBuilder(Material.ENDER_PEARL)
+                            .setCustomData(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, true)
+                            .unbreakable()
+                            .getItem())
+                    .addPrice(Material.EMERALD, 2)
+    ));
+
     public static final List<ShopCategory> CATEGORIES = List.of(
             BLOCKS, WEAPONS, ARMORS
     );
