@@ -133,6 +133,18 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
                     generatorGui.show(evt.getWhoClicked());
                 }
         ), Slot.fromIndex(4));
+
+        pane.addItem(baseGuiControlsService.createSubMenuInputControl(
+                "Configure Biome Nodes",
+                List.of("Edit the biome nodes configuration", "for the game."),
+                Material.CONDUIT,
+                evt -> {
+                    final var nodesGui = createBiomeNodeConfigGui(
+                            (ChestGui) Objects.requireNonNull(evt.getInventory().getHolder()),
+                            config);
+                    nodesGui.show(evt.getWhoClicked());
+                }
+        ), Slot.fromIndex(5));
     }
 
     private void populateTeamConfigItemPane(@NotNull final StaticPane pane, @NotNull final GameConfig config) {
@@ -438,6 +450,60 @@ public class GameEditorGuiProvider implements IGameEditorGuiProvider {
 
         chestGui.addPane(decoPane);
         chestGui.addPane(configItemPane);
+        chestGui.addPane(controlsPane);
+
+        return chestGui;
+    }
+
+    // biome nodes is the same as the list of generators, but they simply holds a list of location and not of
+    // complex generators.
+    private @NotNull ChestGui createBiomeNodeConfigGui(ChestGui parent,
+                                                       GameConfig gameConfig) {
+        final var nodes = gameConfig.getBiomeNodes();
+        final int rows = Math.max(3, nodes.size() /  + 2);
+        final var chestGui = new ChestGui(rows, ComponentHolder.of(chatService.format(
+                "<accent><b>→</b> <base>Biome Nodes Manager", Colors.FUCHSIA
+        )));
+
+        final var nodesPane = new StaticPane(1, 1, 7, rows - 2);
+        final var decoPane = baseGuiControlsService.createBaseBorderPane(rows);
+        final var controlsPane = new StaticPane(0, rows - 1, 9, 1);
+
+        for (int i = 0; i < nodes.size(); i++) {
+            final var node = nodes.get(i);
+            final var slot = Slot.fromIndex(i);
+
+            int finalI = i;
+            final var item = baseGuiControlsService.createLocationInputControl(
+                    "Right click a block with the emerald to set that to thee ndoe's center.",
+                    new IBaseGuiControlsService.InputControlData<>(
+                            Material.GRASS_BLOCK,
+                            null, node,
+                            "Biome Node #" + (i + 1) + " Location",
+                            List.of("The location of the biome node", "in the game."),
+                            (location, inputData) -> {
+                                inputData.setCurrentValue(location);
+                                nodes.set(finalI, location);
+                                gameConfig.save();
+                            }
+                    )
+            );
+            nodesPane.addItem(item, slot);
+        }
+
+        // add base controls
+        controlsPane.addItem(baseGuiControlsService.createBackButton(evt -> parent.show(evt.getWhoClicked())),
+                Slot.fromIndex(0));
+        controlsPane.addItem(baseGuiControlsService.createAddButton(evt -> {
+            gameConfig.getBiomeNodes().add(null);
+            gameConfig.save();
+
+            final var gui = createBiomeNodeConfigGui(parent, gameConfig);
+            gui.show(evt.getWhoClicked());
+        }), Slot.fromIndex(8));
+
+        chestGui.addPane(decoPane);
+        chestGui.addPane(nodesPane);
         chestGui.addPane(controlsPane);
 
         return chestGui;

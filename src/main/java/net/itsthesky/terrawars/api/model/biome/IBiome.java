@@ -28,4 +28,6 @@ public interface IBiome {
 
     @NotNull Villager.Type getVillagerType();
 
+    @NotNull String getSchematicName();
+
 }

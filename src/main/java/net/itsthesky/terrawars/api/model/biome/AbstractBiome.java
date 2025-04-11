@@ -6,6 +6,7 @@ import net.itsthesky.terrawars.api.model.ability.IAbility;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Villager;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -23,4 +24,8 @@ public class AbstractBiome implements IBiome {
     private final Material woolBlock;
     private final Villager.Type villagerType;
 
+    @Override
+    public @NotNull String getSchematicName() {
+        return id + ".schem";
+    }
 }

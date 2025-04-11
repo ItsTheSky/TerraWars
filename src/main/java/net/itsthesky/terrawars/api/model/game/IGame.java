@@ -20,6 +20,12 @@ import java.util.UUID;
  */
 public interface IGame {
 
+    default List<IGamePlayer> getPlayers() {
+        return getTeams().stream()
+                .flatMap(team -> team.getPlayers().stream())
+                .toList();
+    }
+
     /**
      * Represent the size of the game.
      */

@@ -34,6 +34,9 @@ public class GameConfig {
     @SerializedName("generators")
     private List<GameGeneratorConfig> generators = new ArrayList<>();
 
+    @SerializedName("biome_nodes")
+    private List<Location> biomeNodes = new ArrayList<>();
+
     @SerializedName("death_cooldown")
     private int deathCooldown = 5;
 

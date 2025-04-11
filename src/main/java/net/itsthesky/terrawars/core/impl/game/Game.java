@@ -12,6 +12,7 @@ import net.itsthesky.terrawars.api.model.game.IGamePlayer;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
 import net.itsthesky.terrawars.api.services.IBiomeService;
 import net.itsthesky.terrawars.api.services.IChatService;
+import net.itsthesky.terrawars.api.services.ISchemService;
 import net.itsthesky.terrawars.api.services.base.IServiceProvider;
 import net.itsthesky.terrawars.api.services.base.Inject;
 import net.itsthesky.terrawars.core.config.GameConfig;
@@ -48,6 +49,7 @@ public class Game implements IGame {
 
     @Inject private IChatService chatService;
     @Inject private IBiomeService biomeService;
+    @Inject private ISchemService schemService;
     private final IServiceProvider serviceProvider;
 
     private final Map<Location, Block> placedBlocks;
@@ -55,6 +57,7 @@ public class Game implements IGame {
     private final List<GameTeam> teams;
     private final Set<GamePlayer> waitingPlayers;
     private final Set<GameGenerator> generators;
+    private final Set<GameBiomeNode> biomeNodes;
     private final UUID id;
     private final int maxPlayers;
 
@@ -75,6 +78,7 @@ public class Game implements IGame {
         this.waitingPlayers = new HashSet<>();
         this.placedBlocks = new HashMap<>();
         this.generators = new HashSet<>();
+        this.biomeNodes = new HashSet<>();
 
         this.maxPlayers = this.config.getGameSize().getPlayerPerTeam() * 4;
     }
@@ -175,6 +179,7 @@ public class Game implements IGame {
         for (GameTeam team : teams) team.cleanup();
         for (var generator : generators) generator.cleanup();
         for (var player : waitingPlayers) player.cleanup();
+        for (var node : biomeNodes) node.cleanup();
 
         for (Block block : placedBlocks.values()) {
             if (block.getLocation().getWorld() != getWorld())
@@ -356,6 +361,12 @@ public class Game implements IGame {
         for (var team : teams) {
             final var generator = new GameGenerator(this, team.getConfig().getGeneratorLocation());
             generators.add(generator);
+        }
+
+        // Setup biome nodes
+        for (var nodeLocation : config.getBiomeNodes()) {
+            final var gameNode = new GameBiomeNode(this, nodeLocation);
+            biomeNodes.add(gameNode);
         }
 
         setState(GameState.RUNNING);

@@ -1,6 +1,8 @@
 package net.itsthesky.terrawars.core.services;
 
 import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.arguments.BooleanArgument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.PlayerArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import net.itsthesky.terrawars.api.model.game.IGame;
@@ -46,6 +48,8 @@ public class GameService implements IGameService, IService {
     private IBaseGuiControlsService baseGuiControlsService;
     @Inject
     private IGameEditorGuiProvider gameEditorGuiProvider;
+    @Inject
+    private ISchemService schemService;
 
     private final Map<UUID, IGame> games = new HashMap<>();
 
@@ -111,6 +115,13 @@ public class GameService implements IGameService, IService {
     public void init() {
         commandService.registerCommand(new CommandAPICommand("games")
                 .withPermission("terrawars.admin.games")
+                .withSubcommand(new CommandAPICommand("paste_schem")
+                        .withArguments(new StringArgument("name"))
+                        .withOptionalArguments(new BooleanArgument("ignore_air"))
+                        .executesPlayer((player, args) -> {
+                            final var ignoreAir = (boolean) args.getOrDefault("ignore_air", false);
+                            schemService.pasteSchematic(Objects.requireNonNull(args.get("name")).toString(), player.getLocation(), ignoreAir);
+                        }))
                 .withSubcommand(new CommandAPICommand("select_ability")
                         .executesPlayer((player, args) -> {
                             final var game = getPlayerGame(player.getUniqueId());
