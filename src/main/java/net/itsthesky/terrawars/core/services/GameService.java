@@ -110,6 +110,7 @@ public class GameService implements IGameService, IService {
     @Override
     public void init() {
         commandService.registerCommand(new CommandAPICommand("games")
+                .withPermission("terrawars.admin.games")
                 .withSubcommand(new CommandAPICommand("select_ability")
                         .executesPlayer((player, args) -> {
                             final var game = getPlayerGame(player.getUniqueId());
