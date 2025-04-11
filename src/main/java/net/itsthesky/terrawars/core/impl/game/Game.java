@@ -33,6 +33,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ItemMergeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.persistence.PersistentDataType;
@@ -152,6 +154,7 @@ public class Game implements IGame {
 
         player.teleport(getLobbyLocation());
         player.getInventory().clear();
+        player.setGameMode(GameMode.ADVENTURE);
 
         broadcastMessage(IChatService.MessageSeverity.INFO,
                 "<base>" + player.getName() + "<text> joined the game. <accent>[<text>" + waitingPlayers.size() + "<accent>/<text>" + maxPlayers + "<accent>]");
@@ -440,6 +443,14 @@ public class Game implements IGame {
                 return;
             }
 
+            final var lobbyLoc = getLobbyLocation().toBlockLocation();
+            if (block.getY() >= 155 || block.getY() <= 110 || block.getLocation().distanceSquared(lobbyLoc) > 125) {
+                event.setCancelled(true);
+                chatService.sendMessage(player, IChatService.MessageSeverity.ERROR,
+                        "You cannot place blocks outside of the game area!");
+                return;
+            }
+
             BukkitUtils.editBlockPdc(block, pdc -> {
                 pdc.set(Keys.GAME_PLACED_BLOCK_KEY, PersistentDataType.STRING, player.getUniqueId().toString());
                 if (event.getItemInHand().getPersistentDataContainer().has(Keys.SHOP_ITEM_KEY, PersistentDataType.STRING))
@@ -488,6 +499,35 @@ public class Game implements IGame {
             }
 
             placedBlocks.remove(block.getLocation());
+        }
+
+        // Handler for damages: avoid teams player & lobby damages
+        @EventHandler(priority = EventPriority.HIGHEST)
+        public void onDamage(@NotNull EntityDamageByEntityEvent event) {
+            if (event.getDamager() instanceof Player player) {
+                if (state == GameState.WAITING || state == GameState.STARTING) {
+                    event.setCancelled(true);
+                    return;
+                }
+
+                if (!(event.getEntity() instanceof Player damagedPlayer))
+                    return;
+
+                final var damager = findGamePlayer(player);
+                final var damaged = findGamePlayer(damagedPlayer);
+                if (damager == null || damaged == null)
+                    return;
+
+                if (damager.getTeam() == null || damaged.getTeam() == null) {
+                    event.setCancelled(true);
+                    return;
+                }
+
+                if (damager.getTeam().equals(damaged.getTeam())) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
         }
 
         // Handler for abilities
