@@ -75,6 +75,13 @@ public final class Keys {
 
     public static final NamespacedKey KILLER_KEY = new NamespacedKey(NAMESPACE, "killer_item");
 
+    /**
+     * Key used to put custom interaction events on items.
+     * <br>
+     * Will holds a {@link org.bukkit.persistence.PersistentDataType#LIST list}: list of strings
+     */
+    public static final NamespacedKey INTERACTION_KEY = new NamespacedKey(NAMESPACE, "interaction_item");
+
     //endregion
 
     //region Player-specific keys

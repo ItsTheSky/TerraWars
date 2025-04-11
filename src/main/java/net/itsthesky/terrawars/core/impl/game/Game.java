@@ -6,7 +6,6 @@ import lombok.Getter;
 import net.itsthesky.terrawars.TerraWars;
 import net.itsthesky.terrawars.api.model.ability.AbilityType;
 import net.itsthesky.terrawars.api.model.ability.ActiveAbility;
-import net.itsthesky.terrawars.api.model.ability.PassiveAbility;
 import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.model.game.IGamePlayer;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
@@ -34,7 +33,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ItemMergeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.persistence.PersistentDataType;
@@ -63,6 +61,8 @@ public class Game implements IGame {
     private final UUID id;
     private final int maxPlayers;
 
+    private final GameWaitingData waitingData;
+
     private GameState state;
     private BukkitTask startCountdownTask;
 
@@ -81,6 +81,8 @@ public class Game implements IGame {
         this.placedBlocks = new HashMap<>();
         this.generators = new HashSet<>();
         this.biomeNodes = new HashSet<>();
+
+        this.waitingData = new GameWaitingData();
 
         this.maxPlayers = this.config.getGameSize().getPlayerPerTeam() * 4;
     }
@@ -151,10 +153,7 @@ public class Game implements IGame {
 
         final var gamePlayer = new GamePlayer(player, this);
         waitingPlayers.add(gamePlayer);
-
-        player.teleport(getLobbyLocation());
-        player.getInventory().clear();
-        player.setGameMode(GameMode.ADVENTURE);
+        gamePlayer.waitingSetup();
 
         broadcastMessage(IChatService.MessageSeverity.INFO,
                 "<base>" + player.getName() + "<text> joined the game. <accent>[<text>" + waitingPlayers.size() + "<accent>/<text>" + maxPlayers + "<accent>]");
@@ -324,17 +323,32 @@ public class Game implements IGame {
             teamConfigs = config.getTeams().subList(0, Math.max(2, waitingPlayers.size()));
         else
             teamConfigs = config.getTeams();
+        final var biomes = waitingData.getTopVotedBiomes(4);
 
-        for (final var cfg : teamConfigs) {
-            final var team = new GameTeam(cfg, this);
+        for (int i = 0; i < teamConfigs.size(); i++) {
+            final var team = new GameTeam(teamConfigs.get(i), this, biomes.get(i));
             teams.add(team);
         }
 
-        final var players = new ArrayList<>(waitingPlayers);
-        Collections.shuffle(players);
+        final var remainingPlayers = new ArrayList<IGamePlayer>(waitingPlayers);
 
-        final var remainingPlayers = new ArrayList<>(players);
+        // setup teams based on existing ones
+        final var teamPlayers = waitingData.getTeamPlayers();
+        int index = 0;
+        for (final List<IGamePlayer> players : teamPlayers) {
+            if (players.isEmpty())
+                continue;
+            for (final IGamePlayer player : players)
+            {
+                if (remainingPlayers.remove(player))
+                    teams.get(index).tryAddPlayer(player);
+            }
 
+            index++;
+        }
+
+        // add others players to teams
+        Collections.shuffle(remainingPlayers);
         while (!remainingPlayers.isEmpty()) {
             for (GameTeam team : teams) {
                 if (remainingPlayers.isEmpty())
@@ -420,7 +434,7 @@ public class Game implements IGame {
         // Protection Handler (place/break blocks)
         @EventHandler(priority = EventPriority.HIGH)
         public void onPlayerPlace(BlockPlaceEvent event) {
-            if (event.isCancelled())
+            if (event.isCancelled() || event.getPlayer().getGameMode().equals(GameMode.CREATIVE)) // creative players can place blocks
                 return;
 
             final var player = event.getPlayer();
@@ -444,7 +458,7 @@ public class Game implements IGame {
             }
 
             final var lobbyLoc = getLobbyLocation().toBlockLocation();
-            if (block.getY() >= 155 || block.getY() <= 110 || block.getLocation().distanceSquared(lobbyLoc) > 125) {
+            if (block.getY() >= 155 || block.getY() <= 110) {
                 event.setCancelled(true);
                 chatService.sendMessage(player, IChatService.MessageSeverity.ERROR,
                         "You cannot place blocks outside of the game area!");

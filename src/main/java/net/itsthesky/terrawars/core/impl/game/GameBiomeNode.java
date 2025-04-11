@@ -30,7 +30,7 @@ public class GameBiomeNode implements IGameHolder {
         MULTIPLE_PLAYERS
     }
 
-    private static final float CAPTURE_RADIUS = 1.5f; // in blocks
+    private static final float CAPTURE_RADIUS = 2f; // in blocks
     private static final int CAPTURE_TIME = 10; // in seconds
 
     private final @NotNull Game game;
@@ -45,7 +45,7 @@ public class GameBiomeNode implements IGameHolder {
     public GameBiomeNode(@NotNull Game game,
                          @NotNull Location nodeLocation) {
         this.game = game;
-        this.location = nodeLocation.add(0, 0.5f, 0);
+        this.location = nodeLocation.add(0, 0.75f, 0);
         this.owningBiome = null;
         this.playersInRange = new ArrayList<>();
 

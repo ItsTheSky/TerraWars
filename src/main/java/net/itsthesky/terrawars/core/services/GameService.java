@@ -1,10 +1,7 @@
 package net.itsthesky.terrawars.core.services;
 
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.BooleanArgument;
-import dev.jorel.commandapi.arguments.LiteralArgument;
-import dev.jorel.commandapi.arguments.PlayerArgument;
-import dev.jorel.commandapi.arguments.StringArgument;
+import dev.jorel.commandapi.arguments.*;
 import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
 import net.itsthesky.terrawars.api.services.*;
@@ -211,7 +208,9 @@ public class GameService implements IGameService, IService {
                             player.getInventory().addItem(item);
                         }))
                 .withSubcommand(new CommandAPICommand("join")
-                        .withArguments(List.of(new StringArgument("game_id"),
+                        .withArguments(List.of(new StringArgument("game_id")
+                                        .replaceSuggestions(ArgumentSuggestions.stringCollection(s ->
+                                                games.keySet().stream().map(UUID::toString).collect(Collectors.toList()))),
                                 new PlayerArgument("target")))
                         .executesPlayer((player, args) -> {
                             final var gameId = UUID.fromString((String) Objects.requireNonNull(args.get("game_id")));
@@ -231,7 +230,8 @@ public class GameService implements IGameService, IService {
                             chatService.sendMessage(player, IChatService.MessageSeverity.SUCCESS, target.getName() + " joined the game with ID <base>" + gameId + "<text>!");
                         }))
                 .withSubcommand(new CommandAPICommand("edit")
-                        .withArguments(new StringArgument("name"))
+                        .withArguments(new StringArgument("name")
+                                .replaceSuggestions(ArgumentSuggestions.strings(s -> getAvailableConfigs())))
                         .executesPlayer((player, args) -> {
                             final String configName = (String) args.get("name");
 
@@ -300,7 +300,8 @@ public class GameService implements IGameService, IService {
                             newGui.show(player);
                         }))
                 .withSubcommand(new CommandAPICommand("load")
-                        .withArguments(new StringArgument("name"))
+                        .withArguments(new StringArgument("name")
+                                .replaceSuggestions(ArgumentSuggestions.strings(s -> getAvailableConfigs())))
                         .executesPlayer((player, args) -> {
                             final String configName = (String) args.get("name");
 

@@ -22,15 +22,14 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
+import java.util.function.Consumer;
 
 public class ItemBuilder {
 
-    @Inject
-    private IChatService chatService;
+     private static final Map<String, Consumer<PlayerInteractEvent>> INTERACT_ACTIONS = new HashMap<>();
+
+    @Inject private IChatService chatService;
 
     @Getter
     private final ItemStack item;
@@ -87,6 +86,24 @@ public class ItemBuilder {
         for (String line : lore)
             components.add(chatService.format(line, scheme));
         return lore(components);
+    }
+
+    public ItemBuilder addInteraction(@NotNull String interId, @Nullable Consumer<PlayerInteractEvent> action) {
+        if (action == null) {
+            INTERACT_ACTIONS.remove(interId);
+            return this;
+        }
+
+        INTERACT_ACTIONS.put(interId, action);
+        item.editMeta(meta -> {
+            if (meta == null)
+                return;
+            final var container = meta.getPersistentDataContainer().getOrDefault(Keys.INTERACTION_KEY,
+                    PersistentDataType.TAG_CONTAINER, meta.getPersistentDataContainer().getAdapterContext().newPersistentDataContainer());
+            container.set(new NamespacedKey(Keys.NAMESPACE, interId), PersistentDataType.BOOLEAN, true);
+            meta.getPersistentDataContainer().set(Keys.INTERACTION_KEY, PersistentDataType.TAG_CONTAINER, container);
+        });
+        return this;
     }
 
     public ItemBuilder lore(String... lore) {
@@ -255,6 +272,16 @@ public class ItemBuilder {
 
             if (event.getItem().getPersistentDataContainer().has(Keys.NO_MOVE_KEY, PersistentDataType.BOOLEAN))
                 event.setCancelled(true);
+
+            if (event.getItem().getPersistentDataContainer().has(Keys.INTERACTION_KEY, PersistentDataType.TAG_CONTAINER)) {
+                final var container = event.getItem().getPersistentDataContainer().get(Keys.INTERACTION_KEY, PersistentDataType.TAG_CONTAINER);
+                for (var entry : container.getKeys()) {
+                    final var action = INTERACT_ACTIONS.get(entry.getKey());
+                    System.out.println("Found action for " + entry.getKey() + ": " + action);
+                    if (action != null)
+                        action.accept(event);
+                }
+            }
         }
 
         @EventHandler

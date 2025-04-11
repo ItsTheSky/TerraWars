@@ -111,9 +111,8 @@ public class ChatService implements IChatService {
         String message = builder.getArgs().length != 0 ? String.format(builder.getMessage(), builder.getArgs()) : builder.getMessage();
         if (builder.getSource() != null) {
             message = "<accent><source> <b>&7»</b> <text>" + message;
-        } else {
-            final var severity = Optional.of(builder.getSeverity()).orElse(MessageSeverity.NEUTRAL);
-            message = "<accent><b>[</b><base>" + severity.getIcon() + "<accent><b>]</b> <text>" + message;
+        } else if (builder.getSeverity() != null) {
+            message = "<accent><b>[</b><base>" + builder.getSeverity().getIcon() + "<accent><b>]</b> <text>" + message;
         }
 
         final var component = format(message, TagResolver.resolver(placeholders));

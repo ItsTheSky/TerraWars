@@ -10,6 +10,8 @@ import net.itsthesky.terrawars.api.model.game.IGamePlayer;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
 import net.itsthesky.terrawars.api.model.shop.ArmorLevel;
 import net.itsthesky.terrawars.api.services.IChatService;
+import net.itsthesky.terrawars.core.gui.BiomeVotingGui;
+import net.itsthesky.terrawars.core.gui.TeamSelectionGui;
 import net.itsthesky.terrawars.util.*;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
@@ -210,6 +212,48 @@ public class GamePlayer implements IGamePlayer {
                 player.setHealth(0);
             }
         }, 0, 20);
+    }
+
+    public void waitingSetup() {
+        if (!isOnline())
+            return;
+
+        final var player = Objects.requireNonNull(this.offlinePlayer.getPlayer());
+        player.teleport(game.getLobbyLocation());
+        player.getInventory().clear();
+        player.setGameMode(GameMode.ADVENTURE);
+        player.setLevel(0);
+        player.setExp(0);
+
+        player.setHealth(20);
+        player.setFoodLevel(20);
+        player.setSaturation(0);
+
+        player.getInventory().setItem(3, new ItemBuilder(Material.OAK_SAPLING)
+                .name("<accent>⋆ <text>Vote for <base>Biomes <accent>⋆", Colors.AMBER)
+                .noMovement()
+                .addInteraction("vote-biome", event -> {
+                    if (!event.getAction().isRightClick())
+                        return;
+
+                    event.setCancelled(true);
+                    final var gui = new BiomeVotingGui(game, game.getWaitingData());
+                    gui.show(event.getPlayer());
+                })
+                .getItem());
+
+        player.getInventory().setItem(5, new ItemBuilder(Material.CYAN_BANNER)
+                .name("<accent>⋆ <text>Select your <base>Team <accent>⋆", Colors.YELLOW)
+                .noMovement()
+                .addInteraction("select-team", event -> {
+                    if (!event.getAction().isRightClick())
+                        return;
+
+                    event.setCancelled(true);
+                    final var gui = new TeamSelectionGui(game, game.getWaitingData());
+                    gui.show(event.getPlayer());
+                })
+                .getItem());
     }
 
     @Override

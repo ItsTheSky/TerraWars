@@ -29,13 +29,14 @@ public class GameTeam implements IGameTeam {
     private final GameNexus nexus;
     private final Location spawnLocation;
 
-    public GameTeam(GameTeamConfig config, Game game) {
+    public GameTeam(GameTeamConfig config, Game game, IBiome biome) {
         this.id = UUID.randomUUID();
         this.players = new HashMap<>(game.getSize().getPlayerPerTeam());
         this.game = game;
         this.config = config;
         this.spawnLocation = config.getSpawnLocation();
-        this.biome = game.getBiomeService().getBiome(config.getBiomeId());
+        //this.biome = game.getBiomeService().getBiome(config.getBiomeId());
+        this.biome = biome;
         this.nexus = new GameNexus(this);
 
         this.shopEntities = new ArrayList<>();
