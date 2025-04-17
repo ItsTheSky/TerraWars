@@ -5,6 +5,7 @@ import lombok.Setter;
 import net.itsthesky.terrawars.api.model.biome.IBiome;
 import net.itsthesky.terrawars.api.model.game.IGameHolder;
 import net.itsthesky.terrawars.api.model.game.IGamePlayer;
+import net.itsthesky.terrawars.api.model.game.IGameTeam;
 import net.itsthesky.terrawars.api.services.IChatService;
 import net.itsthesky.terrawars.util.BukkitUtils;
 import net.itsthesky.terrawars.util.Colors;
@@ -39,27 +40,35 @@ public class GameBiomeNode implements IGameHolder {
     // data
     private @NotNull BukkitTask circleParticleTask;
     private @NotNull List<IGamePlayer> playersInRange;
-    private @Nullable IBiome owningBiome;
+    private @Nullable IGameTeam owningTeam;
     private @Nullable IGamePlayer capturingPlayer;
 
     public GameBiomeNode(@NotNull Game game,
                          @NotNull Location nodeLocation) {
         this.game = game;
         this.location = nodeLocation.add(0, 0.75f, 0);
-        this.owningBiome = null;
+        this.owningTeam = null;
         this.playersInRange = new ArrayList<>();
 
         this.circleParticleTask = createParticleTask();
         paste("neutral.schem");
     }
 
-    public void changeOwningBiome(@Nullable IBiome biome) {
-        if (biome == null) {
+    public void changeOwningTeam(@Nullable IGameTeam team) {
+        if (team == null) {
             paste("neutral.schem");
-            this.owningBiome = null;
+            if (this.owningTeam != null)
+                this.owningTeam.getCapturedNodes().remove(this);
+
+            this.owningTeam = null;
         } else {
-            paste(biome.getSchematicName());
-            this.owningBiome = biome;
+            paste(team.getBiome().getSchematicName());
+
+            if (this.owningTeam != null)
+                this.owningTeam.getCapturedNodes().remove(this);
+
+            this.owningTeam = team;
+            this.owningTeam.getCapturedNodes().add(this);
         }
     }
 
@@ -98,8 +107,8 @@ public class GameBiomeNode implements IGameHolder {
         return BukkitUtils.runTaskTimer(() -> {
             final var state = scanPlayerInRange();
 
-            var color = owningBiome != null
-                    ? owningBiome.getColor() : Colors.GRAY.get(Colors.SHADE_300);
+            var color = owningTeam != null
+                    ? owningTeam.getBiome().getColor() : Colors.GRAY.get(Colors.SHADE_300);
             if (state == NodeWithinState.NO_PLAYERS)
             {
                 color = Colors.GRAY.get(Colors.SHADE_500);
@@ -107,7 +116,7 @@ public class GameBiomeNode implements IGameHolder {
             else if (state == NodeWithinState.ONE_PLAYER)
             {
                 color = Colors.LIME.get(Colors.SHADE_500);
-                if (owningBiome == null || !capturingPlayer.getTeam().getBiome().equals(owningBiome)) {
+                if (owningTeam == null || !capturingPlayer.getTeam().equals(owningTeam)) {
                     if (System.currentTimeMillis() - lastCaptureTimerMs >= 1000) { // only fire this event every second
                         lastCaptureTimerMs = System.currentTimeMillis();
                         game.getChatService().sendTitle(new IChatService.TitleBuilder()
@@ -148,7 +157,7 @@ public class GameBiomeNode implements IGameHolder {
                     "<text>Biome <shade-lime:600>" + biome.getName() +
                             "<text> has been captured by <shade-lime:600>" +
                             capturingPlayer.getPlayer().getName());
-            changeOwningBiome(biome);
+            changeOwningTeam(capturingPlayer.getTeam());
         }
     }
 

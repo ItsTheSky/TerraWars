@@ -1,8 +1,11 @@
 package net.itsthesky.terrawars.core.impl.game;
 
 import com.github.stefvanschie.inventoryframework.util.UUIDTagType;
+import net.itsthesky.terrawars.api.model.game.IGameTeam;
 import net.itsthesky.terrawars.api.model.game.generator.GameGeneratorType;
 import net.itsthesky.terrawars.core.config.GameGeneratorConfig;
+import net.itsthesky.terrawars.core.impl.upgrade.GeneratorSpeedUpgrade;
+import net.itsthesky.terrawars.core.impl.upgrade.TeamUpgrades;
 import net.itsthesky.terrawars.util.BukkitUtils;
 import net.itsthesky.terrawars.util.Colors;
 import net.itsthesky.terrawars.util.Keys;
@@ -13,6 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.UnknownNullability;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,6 +28,7 @@ public class GameGenerator {
     private final BukkitTask generatingTask;
     private final GameGeneratorType type;
     private final Game game;
+    private final GameTeam team;
 
     private final Location spawnLocation;
     private TextDisplay textDisplay;
@@ -37,17 +42,19 @@ public class GameGenerator {
         this.spawnLocation = config.getGeneratorLocation();
         this.spawnLocation.setYaw(0);
         this.spawnLocation.setPitch(0);
+        this.team = null;
 
         this.generatingTask = createGeneratingTask();
         this.createDisplays();
     }
 
-    public GameGenerator(@NotNull Game game, @NotNull Location location) {
+    public GameGenerator(@NotNull Game game, @NotNull GameTeam gameTeam) {
         this.uuid = UUID.randomUUID();
         this.game = game;
+        this.team = gameTeam;
         this.type = GameGeneratorType.BASE;
 
-        this.spawnLocation = location;
+        this.spawnLocation = gameTeam.getConfig().getGeneratorLocation();
         this.generatingTask = createGeneratingTask();
     }
 
@@ -85,20 +92,32 @@ public class GameGenerator {
 
             final int round = roundCount.getAndIncrement();
             for (var drop : type.getDrops()) {
-                if (round % drop.getRoundDelay() != 0)
-                    continue;
+                int roundDelay = drop.getRoundDelay();
+                if (type == GameGeneratorType.BASE) {
+                    final var generatorLevel = team.getUpgradeLevel(TeamUpgrades.GENERATOR_SPEED);
+                    if (generatorLevel != 0) {
+                        final var dropModifier = GeneratorSpeedUpgrade.LEVEL_GENERATION.get(generatorLevel);
+                        if (drop == GameGeneratorType.BASE.getDrops().get(0)) {
+                            roundDelay = dropModifier.ironRound();
+                        } else if (drop == GameGeneratorType.BASE.getDrops().get(1)) {
+                            roundDelay = dropModifier.goldRound();
+                        }
+                    }
+                }
 
-                spawnLocation.getWorld().spawn(spawnLocation, Item.class, item -> {
-                    item.setItemStack(new ItemStack(drop.getMaterial()));
-                    item.getPersistentDataContainer().set(Keys.GENERATOR_ITEM_KEY, UUIDTagType.INSTANCE, uuid);
-                    item.setVelocity(new Vector(0, 0.1, 0));
-                });
+                if (round % roundDelay == 0) {
+                    spawnLocation.getWorld().spawn(spawnLocation, Item.class, item -> {
+                        item.setItemStack(new ItemStack(drop.getMaterial()));
+                        item.getPersistentDataContainer().set(Keys.GENERATOR_ITEM_KEY, UUIDTagType.INSTANCE, uuid);
+                        item.setVelocity(new Vector(0, 0.1, 0));
+                    });
+                }
             }
 
             final var firstDrop = type.getDrops().iterator().next();
             final var next = firstDrop.getRoundDelay() - (round % firstDrop.getRoundDelay());
             updateDisplays(false, next);
-        }, 20, 20);
+        }, 20, 5);
     }
 
     public void cleanup() {

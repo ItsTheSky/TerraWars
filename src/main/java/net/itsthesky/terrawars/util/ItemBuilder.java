@@ -1,11 +1,14 @@
 package net.itsthesky.terrawars.util;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
 import lombok.Getter;
 import net.itsthesky.terrawars.api.services.IChatService;
 import net.itsthesky.terrawars.api.services.base.IServiceProvider;
 import net.itsthesky.terrawars.api.services.base.Inject;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
@@ -18,6 +21,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -193,6 +197,26 @@ public class ItemBuilder {
                 return;
             meta.setCustomModelData(data);
         });
+        return this;
+    }
+
+    public ItemBuilder withCustomTexture(@NotNull String texture) {
+        if (!texture.startsWith("ey"))
+            throw new IllegalArgumentException("Invalid texture string: " + texture);
+        if (!item.getType().equals(Material.PLAYER_HEAD))
+            throw new IllegalArgumentException("Item type must be PLAYER_HEAD to set a custom texture.");
+
+        item.editMeta(SkullMeta.class, meta -> {
+            if (meta == null)
+                return;
+
+            // calculate an UUID based on the texture:
+            final var uuid = UUID.nameUUIDFromBytes(texture.getBytes());
+            final var playerProfile = Bukkit.createProfile(uuid, uuid.toString().substring(0, 16));
+            playerProfile.setProperty(new ProfileProperty("textures", texture));
+            meta.setPlayerProfile(playerProfile);
+        });
+
         return this;
     }
 

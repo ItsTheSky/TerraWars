@@ -19,10 +19,10 @@ public class GeneratorDrop {
     private final Material material;
 
     /**
-     * The delay between each spawn of this drop. For instance, a delay of 5
-     * means this drop will appear every 5 "seconds" (= rounds).
+     * The delay, in 1/4 of second, between each spawn of this drop. For instance, a delay of 4
+     * means this drop will appear every 1 second.
      * <br>
-     * 1 would be at every round.
+     * <code>1 = 0.25 second = 5 ticks</code>
      */
     private final int roundDelay;
 

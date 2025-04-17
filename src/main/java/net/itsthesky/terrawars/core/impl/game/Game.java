@@ -376,7 +376,7 @@ public class Game implements IGame {
         }
 
         for (var team : teams) {
-            final var generator = new GameGenerator(this, team.getConfig().getGeneratorLocation());
+            final var generator = new GameGenerator(this, team);
             generators.add(generator);
         }
 

@@ -1,6 +1,8 @@
 package net.itsthesky.terrawars.api.model.game;
 
 import net.itsthesky.terrawars.api.model.biome.IBiome;
+import net.itsthesky.terrawars.api.model.upgrade.ITeamUpgrade;
+import net.itsthesky.terrawars.core.impl.game.GameBiomeNode;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -30,4 +32,10 @@ public interface IGameTeam extends IGameHolder {
     @NotNull Location getTeamChestLocation();
 
     @Nullable IGamePlayer getPlayer(@NotNull Player player);
+
+    boolean shouldApplyUpgrade(@NotNull ITeamUpgrade upgrade);
+
+    @NotNull Set<GameBiomeNode> getCapturedNodes();
+
+    int getUpgradeLevel(@NotNull ITeamUpgrade upgrade);
 }

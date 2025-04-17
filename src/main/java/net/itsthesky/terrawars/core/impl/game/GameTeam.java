@@ -6,6 +6,7 @@ import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.model.game.IGameNexus;
 import net.itsthesky.terrawars.api.model.game.IGamePlayer;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
+import net.itsthesky.terrawars.api.model.upgrade.ITeamUpgrade;
 import net.itsthesky.terrawars.core.config.GameTeamConfig;
 import net.itsthesky.terrawars.util.Colors;
 import net.kyori.adventure.text.format.TextColor;
@@ -29,15 +30,23 @@ public class GameTeam implements IGameTeam {
     private final GameNexus nexus;
     private final Location spawnLocation;
 
+    private final Set<GameBiomeNode> capturedNodes;
+
+    private final Map<ITeamUpgrade, Integer> upgrades;
+
     public GameTeam(GameTeamConfig config, Game game, IBiome biome) {
         this.id = UUID.randomUUID();
         this.players = new HashMap<>(game.getSize().getPlayerPerTeam());
+
         this.game = game;
         this.config = config;
-        this.spawnLocation = config.getSpawnLocation();
-        //this.biome = game.getBiomeService().getBiome(config.getBiomeId());
         this.biome = biome;
+
         this.nexus = new GameNexus(this);
+        this.spawnLocation = config.getSpawnLocation();
+
+        this.upgrades = new HashMap<>();
+        this.capturedNodes = new HashSet<>();
 
         this.shopEntities = new ArrayList<>();
         this.shopEntities.add(new GameShopEntity(this, GameShopEntity.ShopEntityType.SHOPKEEPER));
@@ -67,6 +76,16 @@ public class GameTeam implements IGameTeam {
     @Override
     public @Nullable IGamePlayer getPlayer(@NotNull Player player) {
         return players.get(player.getUniqueId());
+    }
+
+    @Override
+    public boolean shouldApplyUpgrade(@NotNull ITeamUpgrade upgrade) {
+        return capturedNodes.size() >= upgrade.getCategory().getRequiredCapturedNodes();
+    }
+
+    @Override
+    public int getUpgradeLevel(@NotNull ITeamUpgrade upgrade) {
+        return upgrades.getOrDefault(upgrade, 0);
     }
 
     @Override
