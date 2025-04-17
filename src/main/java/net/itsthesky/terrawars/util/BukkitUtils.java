@@ -1,5 +1,6 @@
 package net.itsthesky.terrawars.util;
 
+import io.papermc.paper.adventure.PaperAdventure;
 import net.itsthesky.terrawars.TerraWars;
 import net.itsthesky.terrawars.api.services.IChatService;
 import net.itsthesky.terrawars.core.impl.game.Game;
@@ -7,14 +8,20 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
+import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
@@ -147,5 +154,19 @@ public final class BukkitUtils {
         } catch (Exception e) {
             return Component.text(rawJson);
         }
+    }
+
+    public static void updateTitle(Player player, Component title) {
+        final Inventory inventory = player.getOpenInventory().getTopInventory();
+        final ItemStack[] contents = inventory.getContents();
+        final AbstractContainerMenu menu = ((CraftPlayer) player).getHandle().containerMenu;
+
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundOpenScreenPacket(
+                menu.containerId,
+                menu.getType(),
+                PaperAdventure.asVanilla(title)
+        ));
+        player.updateInventory();
+        inventory.setContents(contents);
     }
 }
