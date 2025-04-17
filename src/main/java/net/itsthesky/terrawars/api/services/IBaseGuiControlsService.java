@@ -6,6 +6,7 @@ import com.github.stefvanschie.inventoryframework.pane.PatternPane;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import net.itsthesky.terrawars.util.ItemBuilder;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -106,6 +107,10 @@ public interface IBaseGuiControlsService {
 
     //endregion
 
-    @NotNull PatternPane createBaseBorderPane(int height);
+    default @NotNull PatternPane createBaseBorderPane(int height) {
+        return createBaseBorderPane(height, ItemBuilder.fill());
+    }
+
+    @NotNull PatternPane createBaseBorderPane(int height, @NotNull ItemStack fill);
 
 }

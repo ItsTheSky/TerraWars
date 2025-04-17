@@ -1,6 +1,7 @@
 package net.itsthesky.terrawars.core.impl.game;
 
 import net.itsthesky.terrawars.core.gui.ShopKeeperGui;
+import net.itsthesky.terrawars.core.gui.TeamUpgradeGui;
 import net.itsthesky.terrawars.util.BukkitUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -78,7 +79,8 @@ public class GameShopEntity {
                 final var gui = new ShopKeeperGui(team.getGame(), Objects.requireNonNull(team.getGame().findGamePlayer(player)));
                 gui.show(player);
             } else if (type == ShopEntityType.UPGRADES) {
-                // TODO: Implement upgrades GUI
+                final var gui = new TeamUpgradeGui(team.getGame(), Objects.requireNonNull(team.getGame().findGamePlayer(player)), null);
+                gui.show(player);
             }
         }
 

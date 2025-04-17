@@ -1,6 +1,7 @@
 package net.itsthesky.terrawars.api.model.upgrade;
 
 import lombok.Getter;
+import net.itsthesky.terrawars.api.model.game.IGamePlayer;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
 import org.bukkit.Material;
 import org.jetbrains.annotations.NotNull;
@@ -51,5 +52,10 @@ public abstract class AbstractUpgrade implements ITeamUpgrade {
     @Override
     public @NotNull Map<Material, Integer> getCosts(@NotNull IGameTeam team, int level) {
         return costs.getOrDefault(level, Collections.emptyMap());
+    }
+
+    @Override
+    public void applyUpgrade(@NotNull IGamePlayer source, @NotNull IGameTeam team, int level) {
+        team.increaseUpgradeLevel(this);
     }
 }

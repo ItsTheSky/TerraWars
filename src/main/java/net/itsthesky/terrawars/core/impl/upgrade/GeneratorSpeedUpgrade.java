@@ -63,9 +63,4 @@ public class GeneratorSpeedUpgrade extends AbstractUpgrade {
 
         return lore;
     }
-
-    @Override
-    public void applyUpgrade(@NotNull IGamePlayer source, @NotNull IGameTeam team, int level) {
-        // nothing to do, the upgrade is checked directly to the generator
-    }
 }

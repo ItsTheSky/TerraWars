@@ -257,6 +257,11 @@ public class ItemBuilder {
         return this;
     }
 
+    public ItemBuilder setType(Material paneMaterial) {
+        item.setType(paneMaterial);
+        return this;
+    }
+
     public static class ItemListener implements Listener {
 
         @EventHandler

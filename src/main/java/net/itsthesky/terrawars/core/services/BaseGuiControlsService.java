@@ -15,6 +15,7 @@ import net.itsthesky.terrawars.api.services.IBaseGuiControlsService;
 import net.itsthesky.terrawars.api.services.IChatService;
 import net.itsthesky.terrawars.api.services.base.Service;
 import net.itsthesky.terrawars.util.BukkitUtils;
+import net.itsthesky.terrawars.util.Checks;
 import net.itsthesky.terrawars.util.Colors;
 import net.itsthesky.terrawars.util.ItemBuilder;
 import org.bukkit.Bukkit;
@@ -634,7 +635,9 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
     }
 
     @Override
-    public @NotNull PatternPane createBaseBorderPane(int height) {
+    public @NotNull PatternPane createBaseBorderPane(int height, @NotNull ItemStack itemStack) {
+        Checks.notNull(itemStack, "ItemStack cannot be null");
+
         final List<String> lines = new ArrayList<>();
         lines.add("111111111");
         for (int i = 0; i < height - 2; i++)
@@ -642,7 +645,7 @@ public class BaseGuiControlsService implements IBaseGuiControlsService {
         lines.add("111111111");
         final var pattern = new Pattern(lines.toArray(new String[0]));
         final var pane = new PatternPane(0, 0, 9, height, Pane.Priority.LOWEST, pattern);
-        pane.bindItem('1', new GuiItem(ItemBuilder.fill(), e -> e.setCancelled(true)));
+        pane.bindItem('1', new GuiItem(itemStack, e -> e.setCancelled(true)));
         return pane;
     }
 }

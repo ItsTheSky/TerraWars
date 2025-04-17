@@ -123,7 +123,7 @@ public final class BukkitUtils {
         return TerraWars.instance().serviceProvider().getService(IChatService.class);
     }
 
-    public static void playSound(@NotNull Audience audience, @NotNull Sound sound, int volume, int pitch) {
+    public static void playSound(@NotNull Audience audience, @NotNull Sound sound, float volume, float pitch) {
         Checks.notNull(audience, "Audience cannot be null");
         Checks.notNull(sound, "Sound cannot be null");
 

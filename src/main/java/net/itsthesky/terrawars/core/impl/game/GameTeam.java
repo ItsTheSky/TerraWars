@@ -89,6 +89,15 @@ public class GameTeam implements IGameTeam {
     }
 
     @Override
+    public void increaseUpgradeLevel(ITeamUpgrade upgrade) {
+        if (upgrades.containsKey(upgrade)) {
+            upgrades.put(upgrade, upgrades.get(upgrade) + 1);
+        } else {
+            upgrades.put(upgrade, 1);
+        }
+    }
+
+    @Override
     public boolean tryAddPlayer(@NotNull IGamePlayer player) {
         if (players.size() >= game.getSize().getPlayerPerTeam())
             return false;

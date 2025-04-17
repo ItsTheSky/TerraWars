@@ -1,6 +1,7 @@
 package net.itsthesky.terrawars.api.model.game;
 
 import net.itsthesky.terrawars.api.model.biome.IBiome;
+import net.itsthesky.terrawars.api.model.upgrade.AbstractUpgrade;
 import net.itsthesky.terrawars.api.model.upgrade.ITeamUpgrade;
 import net.itsthesky.terrawars.core.impl.game.GameBiomeNode;
 import net.kyori.adventure.text.format.TextColor;
@@ -38,4 +39,6 @@ public interface IGameTeam extends IGameHolder {
     @NotNull Set<GameBiomeNode> getCapturedNodes();
 
     int getUpgradeLevel(@NotNull ITeamUpgrade upgrade);
+
+    void increaseUpgradeLevel(ITeamUpgrade upgrade);
 }
