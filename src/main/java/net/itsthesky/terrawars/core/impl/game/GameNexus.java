@@ -30,7 +30,6 @@ public class GameNexus implements IGameNexus {
     private final NexusStats stats;
     private final Location location;
     private final GameTeam team;
-    private final int maxLevel;
 
     private final BukkitTask regenTask;
     private final NexusListener listener;
@@ -48,8 +47,8 @@ public class GameNexus implements IGameNexus {
 
         this.isDestroyed = false;
 
-        this.stats = new NexusStats(500, 500, 5, 60);
-        this.maxLevel = 3;
+        this.stats = new NexusStats(500, 500,
+                5, 60);
         this.level = 1;
 
         this.crystal = new NexusCrystal();
@@ -98,11 +97,6 @@ public class GameNexus implements IGameNexus {
     @Override
     public void setLevel(int level) {
         this.level = level;
-    }
-
-    @Override
-    public int getMaxLevel() {
-        return maxLevel;
     }
 
     @Override
@@ -227,6 +221,10 @@ public class GameNexus implements IGameNexus {
 
             updateTextDisplay();
         }
+    }
+
+    public void updateDisplay() {
+        if (this.crystal != null) this.crystal.updateTextDisplay();
     }
 
     public class NexusListener implements Listener {

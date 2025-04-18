@@ -1,6 +1,5 @@
-package net.itsthesky.terrawars.core.impl.upgrade;
+package net.itsthesky.terrawars.core.impl.upgrade.ember;
 
-import net.itsthesky.terrawars.api.model.game.IGamePlayer;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
 import net.itsthesky.terrawars.api.model.game.generator.GameGeneratorType;
 import net.itsthesky.terrawars.api.model.upgrade.AbstractUpgrade;

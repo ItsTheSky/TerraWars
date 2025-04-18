@@ -25,6 +25,8 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Fireball;
+import org.bukkit.entity.LargeFireball;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -33,6 +35,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ItemMergeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.persistence.PersistentDataType;
@@ -429,6 +432,27 @@ public class Game implements IGame {
                             Placeholder.component("message", event.message())),
                             Placeholder.parsed("team", team.getBiome() == null ? "none yet" : team.getBiome().toString())
                     ));
+        }
+
+        @EventHandler(priority = EventPriority.HIGH)
+        public void onFireballExplode(@NotNull EntityExplodeEvent event) {
+            System.out.println("Fireball explode event: " + event.getEntity());
+            if (event.getEntity() instanceof LargeFireball fireball) {
+                event.setCancelled(true);
+
+                final var blocks = BukkitUtils.sphereAround(fireball.getLocation(), 3);
+                for (Block block : blocks) {
+                    if (block.getLocation().getWorld() != getWorld())
+                        continue;
+
+                    final var pdc = BukkitUtils.getBlockPdc(block);
+                    if (pdc != null && pdc.has(Keys.GAME_PLACED_BLOCK_KEY, PersistentDataType.STRING))
+                        block.setType(Material.AIR);
+                }
+
+                final var center = fireball.getLocation();
+                center.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, center, 1);
+            }
         }
 
         // Protection Handler (place/break blocks)

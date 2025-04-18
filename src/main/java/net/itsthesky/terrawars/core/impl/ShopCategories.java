@@ -9,13 +9,14 @@ import net.itsthesky.terrawars.util.ItemBuilder;
 import net.itsthesky.terrawars.util.Keys;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Fireball;
+import org.bukkit.entity.LargeFireball;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Set;
 
 public final class ShopCategories {
 
@@ -161,6 +162,20 @@ public final class ShopCategories {
                     .addPrice(Material.GOLD_INGOT, 8),
             new OneTimeShopItem("fireball", "Fireball",
                     new ItemBuilder(Material.FIRE_CHARGE)
+                            .addInteraction("fireball", evt -> {
+                                evt.setCancelled(true);
+
+                                final var fireball = evt.getPlayer().launchProjectile(Fireball.class);
+                                fireball.setIsIncendiary(false);
+
+                                final var heldItem = evt.getPlayer().getInventory().getItemInMainHand();
+                                if (heldItem.getAmount() > 1) {
+                                    heldItem.setAmount(heldItem.getAmount() - 1);
+                                } else {
+                                    evt.getPlayer().getInventory().remove(heldItem);
+                                }
+                                evt.getPlayer().getPlayer().getWorld().playSound(evt.getPlayer().getLocation(), "entity.firecharge.use", 1, 1);
+                            })
                             .getItem())
                     .addPrice(Material.IRON_INGOT, 32)
     ));

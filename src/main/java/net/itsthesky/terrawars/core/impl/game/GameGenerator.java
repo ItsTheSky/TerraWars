@@ -1,12 +1,11 @@
 package net.itsthesky.terrawars.core.impl.game;
 
 import com.github.stefvanschie.inventoryframework.util.UUIDTagType;
-import net.itsthesky.terrawars.api.model.game.IGameTeam;
 import net.itsthesky.terrawars.api.model.game.generator.GameGeneratorType;
 import net.itsthesky.terrawars.api.model.game.generator.GeneratorDrop;
 import net.itsthesky.terrawars.core.config.GameGeneratorConfig;
-import net.itsthesky.terrawars.core.impl.upgrade.EmeraldGeneratorUpgrade;
-import net.itsthesky.terrawars.core.impl.upgrade.GeneratorSpeedUpgrade;
+import net.itsthesky.terrawars.core.impl.upgrade.crystal.EmeraldGeneratorUpgrade;
+import net.itsthesky.terrawars.core.impl.upgrade.ember.GeneratorSpeedUpgrade;
 import net.itsthesky.terrawars.core.impl.upgrade.TeamUpgrades;
 import net.itsthesky.terrawars.util.BukkitUtils;
 import net.itsthesky.terrawars.util.Colors;
@@ -19,7 +18,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.UnknownNullability;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -127,7 +125,7 @@ public class GameGenerator {
             }
 
             final var firstDrop = type.getDrops().iterator().next();
-            final var next = firstDrop.getRoundDelay() - (round % firstDrop.getRoundDelay());
+            final var next = (firstDrop.getRoundDelay() - (round % firstDrop.getRoundDelay())) / 4;
             updateDisplays(false, next);
         }, 20, 5);
     }

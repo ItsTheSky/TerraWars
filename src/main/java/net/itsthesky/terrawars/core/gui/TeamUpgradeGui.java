@@ -352,6 +352,14 @@ public class TeamUpgradeGui extends AbstractGUI {
             BukkitUtils.playSound(player.getPlayer(), Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.8f);
             return;
         }
+
+        // check if has required upgrades
+        if (!hasRequiredUpgrades(upgrade)) {
+            ((Game) game).getChatService().sendMessage(player.getPlayer(), IChatService.MessageSeverity.ERROR,
+                    "You don't meet the requirements for this upgrade!");
+            BukkitUtils.playSound(player.getPlayer(), Sound.BLOCK_NOTE_BLOCK_BASS, 1, 0.5f);
+            return;
+        }
         
         // Check if can afford
         final Map<Material, Integer> costs = upgrade.getCosts(team, nextLevel);
@@ -370,7 +378,7 @@ public class TeamUpgradeGui extends AbstractGUI {
                 "Successfully purchased the <accent>" + upgrade.getName() + "<text> upgrade (Level " + nextLevel + ")!");
         BukkitUtils.playSound(player.getPlayer(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1.2f);
         
-        // Refresh the GUI to update the upgrade
+        // Refresh the GUI to update the upgrade & related items
         refreshInventory();
     }
     

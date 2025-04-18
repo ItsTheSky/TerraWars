@@ -10,10 +10,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import org.bukkit.Bukkit;
-import org.bukkit.Color;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -28,6 +25,8 @@ import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public final class BukkitUtils {
@@ -168,5 +167,22 @@ public final class BukkitUtils {
         ));
         player.updateInventory();
         inventory.setContents(contents);
+    }
+
+    public static Set<Block> sphereAround(Location location, int radius) {
+        final var sphere = new HashSet<Block>();
+        final var center = location.getBlock();
+        for(int x = -radius; x <= radius; x++) {
+            for(int y = -radius; y <= radius; y++) {
+                for(int z = -radius; z <= radius; z++) {
+                    Block b = center.getRelative(x, y, z);
+                    if(center.getLocation().distance(b.getLocation()) <= radius) {
+                        sphere.add(b);
+                    }
+                }
+
+            }
+        }
+        return sphere;
     }
 }

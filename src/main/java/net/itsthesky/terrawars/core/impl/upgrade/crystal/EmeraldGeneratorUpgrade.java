@@ -1,8 +1,9 @@
-package net.itsthesky.terrawars.core.impl.upgrade;
+package net.itsthesky.terrawars.core.impl.upgrade.crystal;
 
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
 import net.itsthesky.terrawars.api.model.upgrade.AbstractUpgrade;
 import net.itsthesky.terrawars.api.model.upgrade.UpgradeCategory;
+import net.itsthesky.terrawars.core.impl.upgrade.TeamUpgrades;
 import org.bukkit.Material;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,7 +19,7 @@ public class EmeraldGeneratorUpgrade extends AbstractUpgrade {
             3, 64
     );
 
-    protected EmeraldGeneratorUpgrade() {
+    public EmeraldGeneratorUpgrade() {
         super("emerald_generator", UpgradeCategory.CRYSTAL, "Emerald Generator", List.of(
                 "Make your base generator generate", "emerald. More levels means more", "emeralds per second."
         ), 3, Material.EMERALD);

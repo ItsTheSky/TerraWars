@@ -19,8 +19,6 @@ public interface IGameNexus extends IGameHolder {
 
     void setLevel(int level);
 
-    int getMaxLevel();
-
     @NotNull NexusStats getStats();
 
     boolean isDestroyed();
