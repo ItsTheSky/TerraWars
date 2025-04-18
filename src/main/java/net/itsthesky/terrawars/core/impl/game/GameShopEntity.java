@@ -3,9 +3,7 @@ package net.itsthesky.terrawars.core.impl.game;
 import net.itsthesky.terrawars.core.gui.ShopKeeperGui;
 import net.itsthesky.terrawars.core.gui.TeamUpgradeGui;
 import net.itsthesky.terrawars.util.BukkitUtils;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -77,10 +75,10 @@ public class GameShopEntity {
 
             if (type == ShopEntityType.SHOPKEEPER) {
                 final var gui = new ShopKeeperGui(team.getGame(), Objects.requireNonNull(team.getGame().findGamePlayer(player)));
-                gui.show(player);
+                gui.open(player);
             } else if (type == ShopEntityType.UPGRADES) {
                 final var gui = new TeamUpgradeGui(team.getGame(), Objects.requireNonNull(team.getGame().findGamePlayer(player)), null);
-                gui.show(player);
+                gui.open(player);
             }
         }
 

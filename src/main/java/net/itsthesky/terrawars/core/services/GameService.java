@@ -196,7 +196,7 @@ public class GameService implements IGameService, IService {
 
                             final var gamePlayer = game.findGamePlayer(player);
                             final var gui = new ShopKeeperGui(game, gamePlayer);
-                            gui.show(player);
+                            gui.open(player);
                         }))
                 .withSubcommand(new CommandAPICommand("give_killer")
                         .executesPlayer((player, args) -> {

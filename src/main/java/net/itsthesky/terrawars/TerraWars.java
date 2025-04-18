@@ -1,5 +1,6 @@
 package net.itsthesky.terrawars;
 
+import net.itsthesky.terrawars.api.gui.AbstractGUI;
 import net.itsthesky.terrawars.api.services.base.IServiceProvider;
 import net.itsthesky.terrawars.util.ItemBuilder;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -25,6 +26,7 @@ public final class TerraWars extends JavaPlugin {
         }
 
         getServer().getPluginManager().registerEvents(new ItemBuilder.ItemListener(), this);
+        getServer().getPluginManager().registerEvents(new AbstractGUI.InventoryListener(), this);
 
         getLogger().info("TerraWars is ready to go! Registered " + serviceProvider.getRegisteredServices().size() + " services.");
     }

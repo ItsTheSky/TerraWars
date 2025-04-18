@@ -37,7 +37,7 @@ public class SymbioticRegenerationAbility extends PassiveAbility {
     );
 
     public SymbioticRegenerationAbility() {
-        super("mushroom_symbiotic_regeneration", Material.RED_MUSHROOM, "Symbiotic Regeneration",
+        super("mushroom_symbiotic_regeneration", Material.BROWN_MUSHROOM, "Symbiotic Regeneration",
                 List.of(
                         "Passively regenerates health while",
                         "in your team's biome territory.",
