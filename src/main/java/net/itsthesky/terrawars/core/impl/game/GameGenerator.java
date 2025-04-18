@@ -3,7 +3,9 @@ package net.itsthesky.terrawars.core.impl.game;
 import com.github.stefvanschie.inventoryframework.util.UUIDTagType;
 import net.itsthesky.terrawars.api.model.game.IGameTeam;
 import net.itsthesky.terrawars.api.model.game.generator.GameGeneratorType;
+import net.itsthesky.terrawars.api.model.game.generator.GeneratorDrop;
 import net.itsthesky.terrawars.core.config.GameGeneratorConfig;
+import net.itsthesky.terrawars.core.impl.upgrade.EmeraldGeneratorUpgrade;
 import net.itsthesky.terrawars.core.impl.upgrade.GeneratorSpeedUpgrade;
 import net.itsthesky.terrawars.core.impl.upgrade.TeamUpgrades;
 import net.itsthesky.terrawars.util.BukkitUtils;
@@ -11,6 +13,7 @@ import net.itsthesky.terrawars.util.Colors;
 import net.itsthesky.terrawars.util.Keys;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
@@ -18,6 +21,7 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnknownNullability;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -90,8 +94,16 @@ public class GameGenerator {
                 return;
             }
 
-            final int round = roundCount.getAndIncrement();
-            for (var drop : type.getDrops()) {
+            final var round = roundCount.getAndIncrement();
+            final var drops = new ArrayList<>(type.getDrops());
+            if (type == GameGeneratorType.BASE && team.getUpgradeLevel(TeamUpgrades.EMERALD_GENERATOR) > 0) {
+                drops.add(new GeneratorDrop(Material.EMERALD,
+                        EmeraldGeneratorUpgrade.LEVEL_GENERATION.get(
+                                team.getUpgradeLevel(TeamUpgrades.EMERALD_GENERATOR)
+                        )));
+            }
+
+            for (var drop : drops) {
                 int roundDelay = drop.getRoundDelay();
                 if (type == GameGeneratorType.BASE) {
                     final var generatorLevel = team.getUpgradeLevel(TeamUpgrades.GENERATOR_SPEED);

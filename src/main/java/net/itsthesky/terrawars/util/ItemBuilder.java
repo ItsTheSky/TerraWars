@@ -51,6 +51,13 @@ public class ItemBuilder {
     public static ItemStack air() {
         return new ItemBuilder(Material.AIR).item;
     }
+
+    public static ItemStack clean(Material material) {
+        return new ItemBuilder(material)
+                .name(" ")
+                .flags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_UNBREAKABLE)
+                .item;
+    }
     
     public ItemBuilder(Material material) {
         IServiceProvider.instance().inject(this);

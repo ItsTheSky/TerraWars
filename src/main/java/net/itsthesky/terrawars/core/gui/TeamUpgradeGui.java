@@ -68,15 +68,11 @@ public class TeamUpgradeGui extends AbstractGUI {
      */
     private void initializeUpgrades() {
         // Initialize categories map
-        for (UpgradeCategory category : UpgradeCategory.values()) {
+        for (UpgradeCategory category : UpgradeCategory.values())
             categoryUpgrades.put(category, new ArrayList<>());
-        }
 
-        // Add upgrades to their respective categories
-        // For now, only one upgrade in EMBER category
-        categoryUpgrades.get(UpgradeCategory.EMBER).add(TeamUpgrades.GENERATOR_SPEED);
-        
-        // Additional upgrades would be added here as they're implemented
+        for (final var upgrade : TeamUpgrades.getUpgrades())
+            categoryUpgrades.get(upgrade.getCategory()).add(upgrade);
     }
     
     /**
@@ -294,6 +290,7 @@ public class TeamUpgradeGui extends AbstractGUI {
             
             final Map<Material, Integer> costs = upgrade.getCosts(team, nextLevel);
             final boolean canAfford = canAffordUpgrade(costs);
+            final boolean hasRequiredUpgrades = hasRequiredUpgrades(upgrade);
             
             for (Map.Entry<Material, Integer> cost : costs.entrySet()) {
                 final Material material = cost.getKey();
@@ -304,13 +301,30 @@ public class TeamUpgradeGui extends AbstractGUI {
                 lore.add("  " + colorPrefix + "- " + amount + "x <lang:" + material.getItemTranslationKey() + "> " +
                         "(" + playerAmount + "/" + amount + ")");
             }
+
+            // Add requirements
+            if (!upgrade.getRequiredUpgrades().isEmpty()) {
+                lore.add("");
+                lore.add("<accent>• <text>Required upgrades:");
+                for (Map.Entry<ITeamUpgrade, Integer> entry : upgrade.getRequiredUpgrades().entrySet()) {
+                    final ITeamUpgrade requiredUpgrade = entry.getKey();
+                    final int requiredLevel = entry.getValue();
+                    final int playerLevel = team.getUpgradeLevel(requiredUpgrade);
+
+                    final String colorPrefix = playerLevel >= requiredLevel ? "<shade-lime:500>" : "<shade-red:500>";
+                    lore.add("  " + colorPrefix + "- " + requiredUpgrade.getName() + " (required: " +
+                            requiredLevel + ", current: " + playerLevel + ")");
+                }
+            }
             
             // Add call to action
             lore.add("");
-            if (canAfford) {
-                lore.add("<shade-lime:500><b>✔</b> <shade-lime:300>Click to purchase this upgrade!");
-            } else {
+            if (!hasRequiredUpgrades) {
+                lore.add("<shade-red:500><b>✘</b> <shade-red:300>You don't meet the requirements!");
+            } else if (!canAfford) {
                 lore.add("<shade-red:500><b>✘</b> <shade-red:300>You can't afford this upgrade!");
+            } else {
+                lore.add("<shade-lime:500><b>✔</b> <shade-lime:300>Click to purchase this upgrade!");
             }
         } else {
             // Max level reached
@@ -370,6 +384,19 @@ public class TeamUpgradeGui extends AbstractGUI {
             final int playerAmount = countMaterial(material);
             
             if (playerAmount < requiredAmount) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean hasRequiredUpgrades(ITeamUpgrade upgrade) {
+        for (Map.Entry<ITeamUpgrade, Integer> entry : upgrade.getRequiredUpgrades().entrySet()) {
+            final ITeamUpgrade requiredUpgrade = entry.getKey();
+            final int requiredLevel = entry.getValue();
+            final int playerLevel = team.getUpgradeLevel(requiredUpgrade);
+
+            if (playerLevel < requiredLevel) {
                 return false;
             }
         }

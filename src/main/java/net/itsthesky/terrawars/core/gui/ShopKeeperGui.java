@@ -5,7 +5,6 @@ import net.itsthesky.terrawars.api.gui.GUI;
 import net.itsthesky.terrawars.api.model.ability.AbilityType;
 import net.itsthesky.terrawars.api.model.game.IGame;
 import net.itsthesky.terrawars.api.model.game.IGamePlayer;
-import net.itsthesky.terrawars.api.model.shop.ArmorLevel;
 import net.itsthesky.terrawars.api.model.shop.ShopCategory;
 import net.itsthesky.terrawars.api.model.shop.ShopItemType;
 import net.itsthesky.terrawars.api.model.shop.items.AbstractShopItem;
@@ -21,6 +20,7 @@ import net.itsthesky.terrawars.util.Keys;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
@@ -41,73 +41,74 @@ public class ShopKeeperGui extends AbstractGUI {
     private final IGamePlayer player;
     private final Map<ShopCategory, Integer> categoryPages;
     private final Map<ShopCategory, ItemBuilder> categoryItems;
-    
+
     private ShopCategory currentCategory;
 
-    public ShopKeeperGui(@NotNull AbstractGUI parent, @NotNull IGame game, @NotNull IGamePlayer player) {
+    public ShopKeeperGui(@Nullable AbstractGUI parent, @NotNull IGame game, @NotNull IGamePlayer player) {
         super(parent, ((Game) game).getChatService().format(
                 "<accent><b>→</b> <base>Item Shop", Colors.INDIGO
         ), 6);
-        
+
         this.game = game;
         this.player = player;
         this.categoryPages = new HashMap<>();
         this.categoryItems = new HashMap<>();
-        
-        // Fill with empty panes
-        setItems(() -> new ItemBuilder(Material.GRAY_STAINED_GLASS_PANE)
-                .name(" ")
-                .getItem(), e -> e.setCancelled(true), IntStream.range(0, getInventory().getSize()).toArray());
-        
+
         // Add border
-        setItems(() -> new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE)
-                .name(" ")
-                .getItem(), e -> e.setCancelled(true), getBorders());
-        
+        setItems(ItemBuilder::fill, e -> e.setCancelled(true), getBorders());
+        setItems(() -> ItemBuilder.clean(Material.BLUE_STAINED_GLASS_PANE), e -> e.setCancelled(true), getCorners());
+
         // Add back button if we have a parent
-        if (parent != null)
-            createBackButton();
-        
+        createBackButton();
+
         // Setup category tabs at the bottom
         setupCategoryTabs();
-        
+
         // Set default category
         setCategory(ShopCategories.CATEGORIES.getFirst());
     }
-    
+
+    @Override
+    public void onClose(@NotNull InventoryCloseEvent event) {
+        for (final ItemBuilder item : categoryItems.values())
+            item.removeGlow();
+    }
+
     public ShopKeeperGui(@NotNull IGame game, @NotNull IGamePlayer player) {
         this(null, game, player);
     }
-    
+
     private void setupCategoryTabs() {
         int index = 0;
+        int slot = 46;
         for (final ShopCategory category : ShopCategories.CATEGORIES) {
+            slot++;
             final ItemBuilder item = createCategoryItem(category);
             categoryItems.put(category, item);
-            
+
             categoryPages.put(category, index);
-            
-            setItem(index + 45, () -> item.getItem(), e -> {
+
+            setItem(slot, item::getItem, e -> {
                 e.setCancelled(true);
                 setCategory(category);
                 player.getPlayer().playSound(player.getPlayer().getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             });
-            
+
             index++;
         }
-        
+
         // Add the ability category
         final ItemBuilder abilityItem = createCategoryItem(ABILITY_CATEGORY);
         categoryItems.put(ABILITY_CATEGORY, abilityItem);
         categoryPages.put(ABILITY_CATEGORY, index);
-        
-        setItem(index + 45, () -> abilityItem.getItem(), e -> {
+
+        setItem(slot + 1, abilityItem::getItem, e -> {
             e.setCancelled(true);
             setCategory(ABILITY_CATEGORY);
             player.getPlayer().playSound(player.getPlayer().getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
         });
     }
-    
+
     private ItemBuilder createCategoryItem(@NotNull ShopCategory category) {
         final List<String> lore = new ArrayList<>();
         lore.add("");
@@ -118,16 +119,16 @@ public class ShopKeeperGui extends AbstractGUI {
                 .lore(Colors.LIME, lore)
                 .name("<accent><b>→</b> <base>" + category.getName(), Colors.SKY);
     }
-    
+
     private void setCategory(@NotNull ShopCategory category) {
         // Reset previous category's highlight
         if (this.currentCategory != null && this.currentCategory != category) {
             this.categoryItems.get(this.currentCategory).removeGlow();
         }
-        
+
         this.currentCategory = category;
         this.categoryItems.get(category).glow();
-        
+
         // Clear the content area
         for (int i = 0; i < 45; i++) {
             int finalI = i;
@@ -135,29 +136,35 @@ public class ShopKeeperGui extends AbstractGUI {
                 setItem(i, null, null);
             }
         }
-        
+
         // Populate with category items
         if (category == ABILITY_CATEGORY) {
             populateAbilityItems();
+            setTitle(((Game) game).getChatService().format(
+                    "<accent><b>→</b> <base>Select your Ability", Colors.INDIGO
+            ));
         } else {
             populateCategoryItems(category);
+            setTitle(((Game) game).getChatService().format(
+                    "<accent><b>→</b> <base>Item Shop", Colors.INDIGO
+            ));
         }
-        
+
         refreshInventory();
     }
-    
+
     private void populateCategoryItems(ShopCategory category) {
         int slot = 10;
         final List<AbstractShopItem> items = category.getItems();
-        
+
         for (AbstractShopItem shopItem : items) {
             // Skip rows that are part of the border
             if (slot % 9 == 0) slot += 2;
             if (slot % 9 == 8) slot += 2;
             if (slot >= 45) break;
-            
+
             final AbstractShopItem finalShopItem = shopItem;
-            
+
             final List<String> lore = new ArrayList<>();
             if (shopItem.getType() == ShopItemType.PERMANENT) {
                 lore.add("<shade-violet:500><b>✔</b> <shade-violet:300>PERMANENT ITEM");
@@ -188,14 +195,14 @@ public class ShopKeeperGui extends AbstractGUI {
                     lore.add("<shade-red:500><b>✘</b> <shade-red:300>You don't have enough items to buy this!");
                 }
             }
-            
+
             final ItemBuilder itemBuilder = new ItemBuilder(shopItem.createDisplayItem(this.player))
                     .lore(Colors.BLUE, lore)
                     .name(shopItem.getName(), Colors.CYAN);
-            
+
             setItem(slot, () -> itemBuilder.getItem(), e -> {
                 e.setCancelled(true);
-                
+
                 if (!canReallyBuy) {
                     ((Game) game).getChatService().sendMessage(player.getPlayer(), IChatService.MessageSeverity.ERROR, !canBuy
                             ? "You cannot buy this item!"
@@ -231,20 +238,20 @@ public class ShopKeeperGui extends AbstractGUI {
                 // Refresh to update item availability
                 setCategory(category);
             });
-            
+
             slot++;
         }
     }
-    
+
     private void populateAbilityItems() {
         int slot = 10;
-        
+
         for (final var ability : player.getTeam().getBiome().getAvailableAbilities()) {
             // Skip rows that are part of the border
             if (slot % 9 == 0) slot += 2;
             if (slot % 9 == 8) slot += 2;
             if (slot >= 45) break;
-            
+
             final List<String> lore = new ArrayList<>();
             if (ability.getType().equals(AbilityType.PASSIVE))
                 lore.add("<shade-violet:700><b>▷</b> <shade-violet:900>PASSIVE ABILITY");
@@ -265,17 +272,17 @@ public class ShopKeeperGui extends AbstractGUI {
             } else {
                 lore.add("<shade-yellow:500><b>✔</b> <shade-yellow:300>Click to select this ability!");
             }
-            
+
             final ItemBuilder builder = new ItemBuilder(ability.getIcon())
                     .name(ability.getDisplayName(), Colors.EMERALD)
                     .lore(Colors.EMERALD, lore);
-                    
+
             if (this.player.getSelectedAbility() != null && this.player.getSelectedAbility().equals(ability))
                 builder.glow();
-            
+
             setItem(slot, () -> builder.getItem(), e -> {
                 e.setCancelled(true);
-                
+
                 if (ability.equals(this.player.getSelectedAbility())) {
                     ((Game) game).getChatService().sendMessage(player.getPlayer(), IChatService.MessageSeverity.ERROR,
                             "You already have this ability!");
@@ -291,11 +298,11 @@ public class ShopKeeperGui extends AbstractGUI {
                 // Refresh to update the selection
                 setCategory(ABILITY_CATEGORY);
             });
-            
+
             slot++;
         }
     }
-    
+
     private boolean hasEnoughToBuy(@NotNull AbstractShopItem shopItem) {
         for (final Map.Entry<Material, Integer> entry : shopItem.getPrice().entrySet()) {
             final Material material = entry.getKey();
@@ -312,7 +319,7 @@ public class ShopKeeperGui extends AbstractGUI {
         final IGamePlayer gamePlayer = game.findGamePlayer(player);
         if (gamePlayer == null)
             throw new IllegalStateException("Player is not in the game!");
-            
+
         return new ShopKeeperGui(getParent(), game, gamePlayer);
     }
 }

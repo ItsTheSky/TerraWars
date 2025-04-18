@@ -141,24 +141,32 @@ public final class ShopCategories {
 
     ));
 
-    public static final ShopCategory MISC = new ShopCategory("Misc",
+    public static final ShopCategory UTILITIES = new ShopCategory("Utilities",
             new ItemStack(Material.BOOK), List.of(
             new OneTimeShopItem("golden_apple", "Golden Apple",
                     new ItemBuilder(Material.GOLDEN_APPLE)
                             .setCustomData(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, true)
                             .unbreakable()
                             .getItem())
-                    .addPrice(Material.GOLD_INGOT, 8),
+                    .addPrice(Material.GOLD_INGOT, 3),
             new OneTimeShopItem("ender_pearl", "Ender Pearl",
                     new ItemBuilder(Material.ENDER_PEARL)
                             .setCustomData(Keys.WEAPON_KEY, PersistentDataType.BOOLEAN, true)
                             .unbreakable()
                             .getItem())
-                    .addPrice(Material.EMERALD, 2)
+                    .addPrice(Material.EMERALD, 2),
+            new OneTimeShopItem("tnt", "TNT",
+                    new ItemBuilder(Material.TNT)
+                            .getItem())
+                    .addPrice(Material.GOLD_INGOT, 8),
+            new OneTimeShopItem("fireball", "Fireball",
+                    new ItemBuilder(Material.FIRE_CHARGE)
+                            .getItem())
+                    .addPrice(Material.IRON_INGOT, 32)
     ));
 
     public static final List<ShopCategory> CATEGORIES = List.of(
-            BLOCKS, WEAPONS, ARMORS
+            BLOCKS, WEAPONS, ARMORS, UTILITIES
     );
 
     public static @Nullable ItemStack buildItem(@NotNull String itemId, @NotNull IGamePlayer player) {
