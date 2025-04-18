@@ -161,6 +161,10 @@ public abstract class AbstractGUI implements GUI {
             return;
 
         // replace the values of the old item with the new one
+        final var item = inventory.getItem(slot);
+        if (item == null)
+            return;
+
         inventory.getItem(slot).setAmount(newItem.getAmount());
         inventory.getItem(slot).setType(newItem.getType());
         inventory.getItem(slot).setItemMeta(newItem.getItemMeta());

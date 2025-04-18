@@ -11,7 +11,10 @@ import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.AbstractArrow;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -219,6 +222,20 @@ public class ItemBuilder {
             final var playerProfile = Bukkit.createProfile(uuid, uuid.toString().substring(0, 16));
             playerProfile.setProperty(new ProfileProperty("textures", texture));
             meta.setPlayerProfile(playerProfile);
+        });
+
+        return this;
+    }
+
+    public ItemBuilder withOwner(@NotNull OfflinePlayer owner) {
+        if (!item.getType().equals(Material.PLAYER_HEAD))
+            throw new IllegalArgumentException("Item type must be PLAYER_HEAD to set a custom texture.");
+
+        item.editMeta(SkullMeta.class, meta -> {
+            if (meta == null)
+                return;
+
+            meta.setOwningPlayer(owner);
         });
 
         return this;

@@ -251,7 +251,7 @@ public class GamePlayer implements IGamePlayer {
 
                     event.setCancelled(true);
                     final var gui = new TeamSelectionGui(game, game.getWaitingData());
-                    gui.show(event.getPlayer());
+                    gui.open(event.getPlayer());
                 })
                 .getItem());
     }

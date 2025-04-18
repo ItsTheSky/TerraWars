@@ -13,8 +13,10 @@ import net.itsthesky.terrawars.util.BukkitUtils;
 import net.itsthesky.terrawars.util.Colors;
 import net.itsthesky.terrawars.util.ItemBuilder;
 import net.itsthesky.terrawars.util.Pagination;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,6 +42,7 @@ public class BiomeVotingGui extends AbstractPaginationGUI<IBiome> {
         init(new Pagination<>(4*7, biomeService.getAvailableBiomes()));
 
         setItems(ItemBuilder::fill, e -> e.setCancelled(true), getBorders());
+        setItems(() -> new ItemStack(Material.PURPLE_STAINED_GLASS_PANE), e -> e.setCancelled(true), getCorners());
     }
 
     public BiomeVotingGui(@NotNull Game game, @NotNull GameWaitingData waitingData) {
