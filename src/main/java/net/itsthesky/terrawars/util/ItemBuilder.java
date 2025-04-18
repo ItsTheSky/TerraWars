@@ -44,6 +44,10 @@ public class ItemBuilder {
                 .flags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_UNBREAKABLE)
                 .item;
     }
+
+    public static ItemStack air() {
+        return new ItemBuilder(Material.AIR).item;
+    }
     
     public ItemBuilder(Material material) {
         IServiceProvider.instance().inject(this);

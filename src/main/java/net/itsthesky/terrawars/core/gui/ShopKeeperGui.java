@@ -256,7 +256,7 @@ public class ShopKeeperGui extends AbstractGUI {
                 lore.add("<text><i>" + line);
             lore.add("");
             if (ability.getType().equals(AbilityType.ACTIVE)) {
-                lore.add("<accent><b>⌚</b> <base>Cooldown: " + ability.getCooldownSeconds() + "s");
+                lore.add("<accent><b>⌚</b> <base>Cooldown: " + ability.getCooldownString());
                 lore.add("");
             }
 

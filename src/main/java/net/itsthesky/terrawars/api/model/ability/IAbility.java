@@ -36,6 +36,15 @@ public interface IAbility {
 
     int getCooldownSeconds();
 
+    default String getCooldownString() {
+        int minutes = getCooldownSeconds() / 60;
+        int seconds = getCooldownSeconds() % 60;
+        StringBuilder sb = new StringBuilder();
+        if (minutes > 0) sb.append(minutes).append("m ");
+        if (seconds > 0) sb.append(seconds).append("s");
+        return sb.toString();
+    }
+
     AbilityType getType();
 
     boolean isOnCooldown(IGamePlayer player);

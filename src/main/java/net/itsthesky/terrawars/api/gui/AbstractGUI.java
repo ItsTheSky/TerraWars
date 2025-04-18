@@ -70,7 +70,7 @@ public abstract class AbstractGUI implements GUI {
     public void createBackButton(int slot) {
         if (parent != null)
             setItem(slot, () -> new ItemBuilder(Material.ARROW)
-                    .name("<accent><bold>« <base>Retour", Colors.RED)
+                    .name("<accent><bold>« <base>Back", Colors.RED)
                     .getItem(), e -> {
                 e.setCancelled(true);
                 openNew((Player) e.getWhoClicked(), parent);
